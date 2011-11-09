@@ -1,4 +1,13 @@
 function plotEvalProcess(w)
+%  =============================================================
+%  Name: plotEvalProcess.m
+%  Version: 1.0, 9 Nov 2011
+%  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
+%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
+%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
+%  =============================================================
 %makes a plot of scd values by slice and ordered in the order they were evaluated, coded by classification
 
 nP=w{1}.numberOfPlanes;
