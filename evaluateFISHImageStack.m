@@ -1,4 +1,4 @@
-function [worms]= evaluateFISHImageStack_(stackName,toWrite,varargin)  %nameMod
+function [worms]= evaluateFISHImageStack(stackName,toWrite,varargin)  %nameMod
 %  =============================================================
 %  Name: evaluateFISHImageStack.m          %nameMod
 %  Version: 1.4.2, 9 Nov 2011     %nameMod
