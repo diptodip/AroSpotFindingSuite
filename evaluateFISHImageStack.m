@@ -411,7 +411,7 @@ if exist(segmentsName) %then is stack that wasn't cut off
     end;
     
     if toWrite
-        fprintf('Saving worms to:  %s',fullfile(directoryName,[dye stackSuffix '_wormGaussianFit.mat\n']));
+        fprintf('Saving worms to:  %s\n',fullfile(directoryName,[dye stackSuffix '_wormGaussianFit.mat']));
         save(fullfile(directoryName,[dye stackSuffix '_wormGaussianFit']),'worms');
     else
         disp('Will write after processing');
