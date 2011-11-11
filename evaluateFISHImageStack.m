@@ -181,7 +181,7 @@ if exist(segmentsName) %then is stack that wasn't cut off
         % 9/20/11 
         %Image and mask is now read in
         %Correct for bleaching
-        [stack,bleachFactors]=correctForBleach_1p4(stack,segments);
+        [stack,bleachFactors]=correctForBleach(stack,segments);
         %%%%%%%%%%%%%
         
         
