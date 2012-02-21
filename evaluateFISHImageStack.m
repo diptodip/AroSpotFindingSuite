@@ -83,6 +83,7 @@ if nargin==2%default file format
     stackPrefix=regexp(stackName,'\.','split');
     stackFileType=stackPrefix{2};
     stackPrefix=stackPrefix{1};
+    disp(['Stack file type is: ' stackFileType]);
     if strcmp(stackFileType,'stk')
         stackSuffix=collectDigits(stackName,1);
         dye=regexp(stackName,stackSuffix,'split');

@@ -13,6 +13,7 @@ function [stack,bleachFactors]=correctForBleach(im,mask)
 %should help wth the randomForesting
 %Decent slice should be in the middle of the stack
 
+disp(size(im));
 stack=zeros(size(im));
 bleachFactors=zeros(1,size(im,3));
 %% Slice as reference

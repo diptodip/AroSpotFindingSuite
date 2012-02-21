@@ -17,7 +17,7 @@ else
     endPlane=nPlanes;
 end;
 
-stackData=tiffread(filename,startPlace,endPlane);
+stackData=tiffread2(filename,startPlane,endPlane);
 
 stack=double(zeros([size(stackData(1).data) size(stackData,2)]));
 for si=1:size(stackData,2)

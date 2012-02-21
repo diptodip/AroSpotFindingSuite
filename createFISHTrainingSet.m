@@ -132,11 +132,53 @@ else
             %need currpolys
             load(segmentsName);
             
-            [goldSpotsData,rejectedSpotsData]=identifySpots(currpolys,floor(sz(3)/8),dye,stackSuffix);%might as well start up in the worm    %nameMod
-            goldSpots.(regexprep(stackName,'\.','_'))=goldSpotsData;
-            rejectedSpots.(regexprep(stackName,'\.','_'))=rejectedSpotsData;
-            save(fullfile(trainingDir,['goldSpots_' dye '_' probeName '.mat']),'goldSpots');
-            save(fullfile(trainingDir,['rejectedSpots_' dye '_' probeName '.mat']),'rejectedSpots');
+            %NOTE - need to caution if redoing a stack that has already
+            %been done...ultimately, will need to integrate this into
+            %identifySpots so that these already done ones show up as red
+            runGUI=1;
+            if isfield(goldSpots,regexprep(stackName,'\.','_')) || isfield(rejectedSpots,regexprep(stackName,'\.','_'))
+                contin=input(sprintf('Spots from %s are already part of the manually annotated list.\nThe GUI does not currently look these up, and you will likely select many of the same spots/non-spots again.\nWhile I will make sure that only one copy of each spot is listed, this will waste your time a bit.\nProbably better is just to use a different image stack.\nIf you wish to continue with this stack, press c<Enter>.  If you do not want to continue, press any other key followed by <Enter>:  ',stackName),'s');
+                if ~strcmp(contin,'c')
+                    runGUI=0;
+                end;
+            end;
+            if runGUI
+                if ~isfield(goldSpots,regexprep(stackName,'\.','_'))
+                    [goldSpotsData,rejectedSpotsData]=identifySpots(currpolys,floor(sz(3)/8),dye,stackSuffix);%might as well start up in the worm    %nameMod
+                    goldSpots.(regexprep(stackName,'\.','_'))=[];
+                end;
+                
+                goldSpots.(regexprep(stackName,'\.','_'))=unique([goldSpots.(regexprep(stackName,'\.','_')); goldSpotsData],'rows');
+                
+                if ~isfield(rejectedSpots,regexprep(stackName,'\.','_'))
+                    rejectedSpots.(regexprep(stackName,'\.','_'))=[];
+                end;
+                
+                rejectedSpots.(regexprep(stackName,'\.','_'))=unique([rejectedSpots.(regexprep(stackName,'\.','_')); rejectedSpotsData],'rows');
+                
+                % Make sure no spots are both rejected and gold
+                inBoth=intersect(rejectedSpots.(regexprep(stackName,'\.','_')),goldSpots.(regexprep(stackName,'\.','_')),'rows');
+                if ~isempty(inBoth)
+                    %if there are some, remove them from both
+                    gd=[]; rd=[];
+                    for dbi=1:size(inBoth,1)
+                        for gi=1:size(goldSpots.(regexprep(stackName,'\.','_')),1);
+                            if isequal(inBoth(dbi,:),goldSpots.(regexprep(stackName,'\.','_'))(gi,:))
+                                gd=[gd, dbi];
+                            end;
+                        end;
+                        for ri=1:size(rejectedSpots.(regexprep(stackName,'\.','_')),1);
+                            if isequal(inBoth(dbi,:),rejectedSpots.(regexprep(stackName,'\.','_'))(ri,:))
+                                rd=[rd, dbi];
+                            end;
+                        end;
+                    end;
+                    goldSpots.(regexprep(stackName,'\.','_'))(gd,:)=[];
+                    rejectedSpots.(regexprep(stackName,'\.','_'))(rd,:)=[];
+                end;
+                save(fullfile(trainingDir,['goldSpots_' dye '_' probeName '.mat']),'goldSpots');
+                save(fullfile(trainingDir,['rejectedSpots_' dye '_' probeName '.mat']),'rejectedSpots');
+            end;
         end;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %Go through and make sure that all the goldSpots and rejected spots can be found

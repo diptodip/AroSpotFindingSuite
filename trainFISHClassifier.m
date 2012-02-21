@@ -247,7 +247,8 @@ end;
 
 % R
 responseMatrixFileName=regexprep(trainingSet.name,'.mat','_dataMatrix.txt');
-ntree=10000;%25Oct2011 changed to 5000
+ntree=2000;%25Oct2011 changed to 5000 %11/18/11 changed to 2000...time is ~ linear in number of trees with unclear benefit...just want enough trees so that each case gets predicted a few times
+ntreeForTune=500;%11/18/11.  use smaller numbe rofr tuning and then find the minOOB and use this
 programName=regexprep(trainingSet.name,'.mat','_trainingProgram.R');
 dlmwrite( responseMatrixFileName, [ trainingSet.dataMatrix trainingSet.categoryVector+1],'delimiter','\t','precision',10 );%(0,1)->(1,2) since this is the way they will come back
 Rfile=fopen(programName,'w');
@@ -260,7 +261,9 @@ fprintf(Rfile,'colnames(train)=c("%s");\n',[strjoin(statsToUse,'", "') '", "manu
 fprintf(Rfile,'dimTrain=dim(train);\n');
 fprintf(Rfile,'trData=train[,-dimTrain[2]];\n');
 fprintf(Rfile,'trCats=factor(train[,dimTrain[2]]);\n');
-fprintf(Rfile,'rf=tuneRF(x=trData,y=trCats,mtryStart=floor(2*sqrt(dimTrain[2]-1)),stepFactor=1.1,improve=0.01,ntree=%d,importance=TRUE,doBest=TRUE, proximity=TRUE);\n',ntree);%25Oct2011 changed to 2*sqrt...
+fprintf(Rfile,'mtryOOB=tuneRF(x=trData,y=trCats,mtryStart=floor(2*sqrt(dimTrain[2]-1)),stepFactor=1.1,improve=0.01,ntree=%d,importance=TRUE,doBest=FALSE, proximity=TRUE);\n',ntreeForTune);%25Oct2011 changed to 2*sqrt...
+fprintf(Rfile,'mtryFinal=mtryOOB[which.min(mtryOOB[,2]),1];\n');
+fprintf(Rfile,'rf=randomForest(x=trData,y=trCats,ntree=%d, mtry=mtryFinal,importance=TRUE,proximity=TRUE);\n',ntree);
 fprintf(Rfile,'save(rf,file="%s");\n',regexprep(trainingSet.name,'.mat','.randomForest'));
 fprintf(Rfile,'write(rf$mtry,file="%s");\n',regexprep(trainingSet.name,'.mat','_mtry.txt'));
 fprintf(Rfile,'write(t(rf$confusion),file="%s",ncolumns=3);\n',regexprep(trainingSet.name,'.mat','_confusion.txt'));
