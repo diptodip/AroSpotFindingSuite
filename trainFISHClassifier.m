@@ -247,13 +247,16 @@ end;
 
 % R
 responseMatrixFileName=regexprep(trainingSet.name,'.mat','_dataMatrix.txt');
-ntree=2000;%25Oct2011 changed to 5000 %11/18/11 changed to 2000...time is ~ linear in number of trees with unclear benefit...just want enough trees so that each case gets predicted a few times
+ntree=10000;%25Oct2011 changed to 5000 %11/18/11 changed to 2000...time is ~ linear in number of trees with unclear benefit...just want enough trees so that each case gets predicted a few times %17Apri12 - changed to 10,000 so that SE~1/sqrt(ntree)=.01
 ntreeForTune=500;%11/18/11.  use smaller numbe rofr tuning and then find the minOOB and use this
 programName=regexprep(trainingSet.name,'.mat','_trainingProgram.R');
 dlmwrite( responseMatrixFileName, [ trainingSet.dataMatrix trainingSet.categoryVector+1],'delimiter','\t','precision',10 );%(0,1)->(1,2) since this is the way they will come back
 Rfile=fopen(programName,'w');
 fprintf(Rfile,'setwd("%s");\n',strrep(cd,'\','\\'));
 fprintf(Rfile,'library(randomForest);\n');
+%%%%%%%%%
+fprintf(Rfile,'source("/Users/BrutusXPro/local/lib/matlab/toolbox/myMFiles/CelegansFISHAnalysis/spotFindingSuite_GITRepository/tuneRF462Patched.R");\n');
+%%%
 fprintf(Rfile,'train=read.table("%s");\n',responseMatrixFileName);
 %rename columns with statLabels
 fprintf(Rfile,'colnames(train)=c("%s");\n',[strjoin(statsToUse,'", "') '", "manualClass']);
@@ -261,7 +264,8 @@ fprintf(Rfile,'colnames(train)=c("%s");\n',[strjoin(statsToUse,'", "') '", "manu
 fprintf(Rfile,'dimTrain=dim(train);\n');
 fprintf(Rfile,'trData=train[,-dimTrain[2]];\n');
 fprintf(Rfile,'trCats=factor(train[,dimTrain[2]]);\n');
-fprintf(Rfile,'mtryOOB=tuneRF(x=trData,y=trCats,mtryStart=floor(2*sqrt(dimTrain[2]-1)),stepFactor=1.1,improve=0.01,ntree=%d,importance=TRUE,doBest=FALSE, proximity=TRUE);\n',ntreeForTune);%25Oct2011 changed to 2*sqrt...
+%modified from tuneRF to tuneRF462Patched
+fprintf(Rfile,'mtryOOB=tuneRF462Patched(x=trData,y=trCats,mtryStart=floor(2*sqrt(dimTrain[2]-1)),stepFactor=1.1,improve=0.01,ntree=%d,importance=TRUE,doBest=FALSE, proximity=TRUE,plot=TRUE);\n',ntreeForTune);%25Oct2011 changed to 2*sqrt...
 fprintf(Rfile,'mtryFinal=mtryOOB[which.min(mtryOOB[,2]),1];\n');
 fprintf(Rfile,'rf=randomForest(x=trData,y=trCats,ntree=%d, mtry=mtryFinal,importance=TRUE,proximity=TRUE);\n',ntree);
 fprintf(Rfile,'save(rf,file="%s");\n',regexprep(trainingSet.name,'.mat','.randomForest'));
@@ -273,6 +277,7 @@ fprintf(Rfile,'x=margin(rf,observed=trCats);\npdf("%s");\nplot(x,sort=FALSE,main
 fprintf(Rfile,'\npdf("%s",width=12,height=12);varImpPlot(rf,sort=FALSE, n.var=%d);\ndev.off();\n',regexprep(trainingSet.name,'.mat','_varImp.pdf'),length(statsToUse));
 fprintf(Rfile,'\npdf("%s");MDSplot(rf,trCats,k=2);\ndev.off();\n',regexprep(trainingSet.name,'.mat','_MDS.pdf'));
 fprintf(Rfile,'\npdf("%s");plot(rf);\ndev.off();\n',regexprep(trainingSet.name,'.mat','_rfPlot.pdf'));
+fprintf(Rfile,'\npdf("%s");plot(sort(rf$votes[,2]),pch=20,ylab="Fraction of votes for being a spot",main="Classification curve from %d trees");\ndev.off();\n',regexprep(trainingSet.name,'.mat','_classificationCurvePlot.pdf'),ntree);
 
 %need to add saveplots
 fclose(Rfile);

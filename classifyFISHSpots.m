@@ -232,6 +232,7 @@ if ~isempty(worms)%if the stack is bad then it wont run
                     %split into data and cateogries
                     fprintf(Rfile,'testRF=predict(object=rf,newdata=teData,type="prob");\n');
                     fprintf(Rfile,'write(t(testRF),file="%s",ncolumns=2);\n',['RFtest' dye stackSuffix '_w' num2str(wi) '_results.txt']);
+                    fprintf(Rfile,'\npdf("%s");plot(sort(testRF[,2]),pch=20,ylab="Fraction of votes for being a spot",main="Classification curve from %d trees");\ndev.off();\n',['RFtest' dye stackSuffix '_w' num2str(wi) '_classificationCurvePlot.pdf'],trainingSet.MachLearn{1}.params.ntree);
                     %need to add saveplots
                     fclose(Rfile);
                     fprintf('output going to %s.out.txt\n',programName);

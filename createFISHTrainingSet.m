@@ -323,7 +323,8 @@ else
         for regi=1:size(spotCenters,1)
             loc=spotCenters(regi,1:3);
             if ~spotInfoNumbersInWorms(regi)
-                worms=addNewSpotToWorm_1p4p1(loc,wormNumbers(regi),worms);
+                %21Mar12 - changed below addNewSpotToWorm_1p4p1 to addNewSpotToWorm
+                worms=addNewSpotToWorm(loc,wormNumbers(regi),worms);
                 newSpotsHaveBeenAddedToWorms=newSpotsHaveBeenAddedToWorms+1;
                 spotInfoNumbersInWorms(regi)=size(worms{wormNumbers(regi)}.spotInfo,2);%because it was added at the end
             end;
