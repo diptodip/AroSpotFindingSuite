@@ -28,12 +28,10 @@ end;
 
 for si=1:nSpots
     spotFound=0;
-    spotFoundInEmbryo=0;
     %first search the currpolys
     for ci=1:size(currpolys,2)
         if currpolys{ci}(listOfLocations(si,1),listOfLocations(si,2))==1
             wormNumbers(si)=ci;
-            spotFoundInEmbryo=1;
             %Now search the worms
             for siwi=1:length(spotInfosToTest{ci})
                 if isequal(listOfLocations(si,1:3),worms{ci}.spotInfo{spotInfosToTest{ci}(siwi)}.locations.stack)
@@ -46,14 +44,11 @@ for si=1:nSpots
                     spotInfosToTest{ci}(siwi)=[];
                 end;
             end;
-            break%if SpotFoundInEmbryo
+            break
         end;
     end;
-    if ~spotFoundInEmbryo
-        fprintf('Spot %d is not within a segmented embryo , location %d %d %d\n',si,listOfLocations(si,1),listOfLocations(si,2),listOfLocations(si,3))
-    end;
     if ~spotFound
-        fprintf('Spot %d not found in the worms data structure, location %d %d %d\n',si,listOfLocations(si,1),listOfLocations(si,2),listOfLocations(si,3));
+        fprintf('Spot %d not found, location %d %d %d\n',si,listOfLocations(si,1),listOfLocations(si,2),listOfLocations(si,3));
     end;
 end;
 

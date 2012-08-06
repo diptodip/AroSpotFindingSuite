@@ -765,7 +765,7 @@ if data.highMemory
     %mnFullImage=min(fullImage(fullImage~=0));
     %rangeImage=mxFullImage-mnFullImage;
     %fullImage(fullImage~=0)=(fullImage(fullImage~=0)-mnFullImage)/rangeImage;
-    fullImage=imscale(fullImage);
+    fullImage=imscale(fullImage)
     data.fullImage=imagesc(fullImage);
     colormap(gray);
     axis off

@@ -1,26 +1,47 @@
-function stack=readTiffStack(filename,nPlanes,varargin)
-%  =============================================================
+function stack=readTiffStack(fileName,varargin)
+%%  =============================================================
 %  Name: readTiffStack.m
-%  Version: 1.0, 9 Nov 2011
-%  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
-%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
-%  =============================================================
-%a wrapper for tiffread.m from Francois Nedelec
-if nargin>2
-    startPlane=nPlanes;
-    endPlane=varargin{1};
+%  Version: 2.0, 3rd Nov 2011
+%  Author: Allison Wu
+%  Description: 
+%       - varargin{1}: startPlane. Default: 1
+%       - varargin{2}: endPlane. Default: read till the end of the tif file.
+%       - Detects the end of the tif file automatically.
+%% ==============================================================
+
+switch nargin
+    case 1
+        startPlane=1;
+        endPlane=[];
+    case 2
+        startPlane=varargin{1};
+        endPlane=[];
+    case 3
+    startPlane=varargin{1};
+    endPlane=varargin{2};
+
+end
+err=[];
+if isempty(endPlane)
+    k=1;
+    while isempty(err)
+        try
+            stack(:,:,k)=imread(fileName,startPlane+k-1);
+            k=k+1;
+        catch err
+            if strcmp(err.identifier, 'MATLAB:rtifc:invalidDirIndex')
+                disp('Finished loading the whole stack.')
+            else
+                rethrow(err)
+            end
+        end
+    end
+    
 else
-    startPlane=1;
-    endPlane=nPlanes;
-end;
+    for k=1:(endPlane-startPlane+1)
+        stack(:,:,k)=imread(fileName,startPlane+k-1);
+    end
+end
 
-stackData=tiffread2(filename,startPlane,endPlane);
 
-stack=double(zeros([size(stackData(1).data) size(stackData,2)]));
-for si=1:size(stackData,2)
-    stack(:,:,si)=double(stackData(si).data);
-end;
 end

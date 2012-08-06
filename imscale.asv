@@ -11,12 +11,10 @@ function [im] = imscale(im1,varargin)
 %This is a utility function to scale an image
 %varargin is percentile...if it is present, then scale not to max but to
 %percentile
-mnIM=min(im1(im1(:)>0));
-mxIM=max(im1(im1(:)>0));
+im=im1-min(im1(:));
+topPixel=max(im(:));
 if size(varargin,2)>0
-    mxIM=prctile(im1(im1(:)>0),varargin{1});
-end
-rangeIM=mxIM-mnIM;
-im=im1;
-im(im>0)=(im(im>0)-mnIM)/rangeIM;
+    topPixel=prctile(im(:),varargin{1});
+end;
+im=im/topPixel;
 end

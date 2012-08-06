@@ -1,4 +1,5 @@
 function gaussfit=calculateFISHStatistics(dataColumn,centerR,centerC,iSlice,quickAndDirtyStats,varargin)
+%tic
 %  =============================================================
 %  Name: calculateFISHStatistics.m
 %  Version: 1.4.1, 20 Sept 2011
@@ -139,13 +140,13 @@ end;
 	    for ppi=pctiles
 	        statValues.(['prctile_' num2str(ppi)])=percentiles(ppi/10);
 	    end;
-    end;
+    end
     
 %%%%%%%%%%%%%%%%%%%%%%    
     
     function statValues = threeDStat(dataMat,centerR,centerC,adjs)
 	    statValues.threeDness=max(adjs)/dataMat(centerR,centerC);
-    end;
+    end
 
 %%%%%%%%%%%%%%%%%%%%%%
 
@@ -313,7 +314,8 @@ end;
 %				statValues.statisticFieldName = statisticCalculation
 %			end;
 %
-%
-
+%toc
+%time=toc;
+%fprintf('Spent % seconds./n',time);
 
 end
