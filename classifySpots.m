@@ -52,8 +52,8 @@ if ~isempty(worms)
     % Load in the compact random forests.
     disp('Load in the random forests...')
     if ~isempty(varargin)&&~isempty(varargin{1})
-        fprintf('Using trained classifier linked to %s \n', trainingSet.FileName)
         trainingSet=varargin{1};
+        fprintf('Using trained classifier linked to %s \n', trainingSet.FileName)
         load(trainingSet.RF.RFfileName);
     else
         t=dir(['trainingSet_' dye '**.mat']);

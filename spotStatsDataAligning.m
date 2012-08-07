@@ -68,7 +68,7 @@ for k=1:length(dye)
         stackName=regexprep(posCount(j).name,'_','\.');
         stackPrefix=regexp(stackName,'\.','split');
         posNum=stackPrefix{2};
-        posNum=str2num(regexprep(posNum,'Pos',''));
+        posNum=str2num(cell2mat(regexp(posNum,'\d+','match')));
         fprintf('Aligning data at position %d ...\n', posNum)
         for i=1:length(spotStats)
             if strcmp(dye{k},stackPrefix{1})
@@ -87,14 +87,15 @@ if alignDapi
     disp('Find nuclei number data...')
     % old stk embryoDataStructure format?
     l=dir('**_embryoDataStructure**.mat');
+    nuclei=dir('newNucallembryos_**.mat');
+    wData=dir('wormData**.mat');
     if ~isempty(l)
         load(l.name)
         wormData.spotNum(:,end)=out.dapis';
         clear out
-    else
+    elseif ~isempty(nuclei)
         % Search for newNucallembryos format if embryoDataStructure format
         % is not found.
-        nuclei=dir('newNucallembryos_**.mat');
         for n=1:length(nuclei)
             nameSplit=regexprep(nuclei(n).name,'_','\.');
             nameSplit=regexp(nameSplit,'\.','split');
@@ -113,6 +114,7 @@ if alignDapi
             
         end
     end
+    
     % Plot womrData by dye
     color={'b','g','m'};
     for p=1:length(dye)

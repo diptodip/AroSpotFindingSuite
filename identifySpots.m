@@ -175,6 +175,7 @@ worms=varargin{4};
 wi=varargin{5};
 
 
+
 %%
 
 %%%Note that this depends on particular file name structure of
@@ -261,16 +262,19 @@ end;
 dataStructure.segMasks=segMasks{wi}; % Note: original segments were for the entire stack. now segMasks is for each worm.
 dataStructure.outlines=outlines; % Note: original outlines were for the entire stack. now outlines is for each worm.
 dataStructure.cameraBackground=[];
-dataStructure.segStacks=segStacks{wi};
+%dataStructure.segStacks=segStacks{wi};
 dataStructure.wi=wi;
 dataStructure.stackInfo=stackInfo;
-clear segStacks segMasks
+dataStructure.scaledStack=segStacks{wi};
+
+clearvars -except dataStructure handles hObject
+%save(fullfile(pwd,'tmp.mat'))
+%load tmp.mat
 
 intensityFraction=.8;
 if handles.highMemory
-    stk=dataStructure.segStacks;
     for k=1:dataStructure.stackInfo.numberOfPlanes
-        [dataStructure.scaledStack(:,:,k),handles.sortedSpotData.scaledValues]=loadAndScaleSlice(dataStructure.segStacks,k,handles);
+        [dataStructure.scaledStack(:,:,k),handles.sortedSpotData.scaledValues]=loadAndScaleSlice(dataStructure.scaledStack,k,handles);
         %slice=stk(:,:,k);
         %mnSlice=min(slice(:));
         %mxSlice=max(slice(:));
@@ -280,11 +284,13 @@ if handles.highMemory
     end
     
 else
-    [slice,handles.sortedSpotData.scaledValues]=loadAndScaleSlice(dataStructure.segStacks,handles.currentZ,handles);
+    [slice,handles.sortedSpotData.scaledValues]=loadAndScaleSlice(dataStructure.scaledStack,handles.currentZ,handles);
     dataStructure.scaledSlice=slice;
     clear slice
 end
 
+h=size(dataStructure.scaledStack,3);
+dataStructure.fullImage=max(dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3);
 
 handles.lastHandles={};
 handles.rollbackDepth=6;
@@ -294,7 +300,7 @@ dataStructure.rejectedSpots=[];
 dataStructure.bkgdSpots=[];
 
 handles.dataStructure=dataStructure;
-handles.dataStructure.origSize=[size(dataStructure.segMasks) worms{1}.numberOfPlanes];%size(handles.dataStructure.scaledStack);
+handles.dataStructure.origSize=[size(dataStructure.segMasks) handles.worms{1}.numberOfPlanes];%size(handles.dataStructure.scaledStack);
 %x=1,y=1 is NW,  x runs W-E, y runs N-S
 
 zoom128Size=512;
@@ -524,7 +530,7 @@ if data.blueSlice(pixelToChange_r,pixelToChange_c)
             disp(['Moving from slice ' num2str(data.currentZ) ' to slice ' num2str(data.currentZ+1)]);
             data.currentZ=data.currentZ+1;
             if ~data.highMemory
-                [currentSlice,spotVSortedScaled]=loadAndScaleSlice(data.dataStructure.segStacks,data.currentZ,data);
+                [currentSlice,spotVSortedScaled]=loadAndScaleSlice(data.dataStructure.scaledStack,data.currentZ,data);
                 data.dataStructure.scaledSlice=currentSlice;
                 data.sortedSpotData.scaledValues=spotVSortedScaled;
             end;
@@ -756,17 +762,17 @@ c128C=xToCol(c128X);
 %i need an argument to tell it whether to recalculate regional maxima or
 %not...yes when i move, no when i toggle maxima
 
-if data.highMemory
+%if data.highMemory
     set(data.figure_handle,'CurrentAxes',data.fullImage);
     %fullColor=cat(3,currentSlice,currentSlice.*(~data.dataStructure.segMasks),currentSlice.*(~data.dataStructure.segMasks));
-    h=size(data.dataStructure.segStacks,3);
-    fullImage=max(data.dataStructure.segStacks(:,:,floor(h/5):ceil(h*4/5)),[],3);
+    h=size(data.dataStructure.scaledStack,3);
+    %fullImage=max(data.dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3);
     %mxFullImage=max(fullImage(fullImage~=0));
     %mnFullImage=min(fullImage(fullImage~=0));
     %rangeImage=mxFullImage-mnFullImage;
     %fullImage(fullImage~=0)=(fullImage(fullImage~=0)-mnFullImage)/rangeImage;
-    fullImage=imscale(fullImage);
-    data.fullImage=imagesc(fullImage);
+    %fullImage=imscale(fullImage);
+    data.fullImage=imshow(data.dataStructure.fullImage);
     colormap(gray);
     axis off
     title('Max. Merged Image')
@@ -776,7 +782,7 @@ if data.highMemory
     %corner is (0,0)
     rectangle('Position',[c128X, c128Y, c128W,c128H],'EdgeColor','g');
     rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor','y');
-end;
+%end;
 
 set(data.figure_handle,'CurrentAxes',data.zoom16);
 
@@ -1116,7 +1122,7 @@ if handles.currentZ<handles.dataStructure.origSize(3)
     disp(['Moving from slice ' num2str(handles.currentZ) ' to slice ' num2str(handles.currentZ+1)]);
     handles.currentZ=handles.currentZ+1;
     if ~handles.highMemory
-        [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.segStacks,handles.currentZ,handles);
+        [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.scaledStack,handles.currentZ,handles);
         handles.dataStructure.scaledSlice=currentSlice;
         handles.sortedSpotData.scaledValues=spotVSortedScaled;
     end;
@@ -1300,7 +1306,7 @@ while c16X>10000 %this means it is the next slice
         if handles.highMemory
             currentSlice=handles.dataStructure.scaledStack(:,:,currentZ);
         else
-            [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.segStacks,currentZ,handles);
+            [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.scaledStack,currentZ,handles);
             handles.dataStructure.scaledSlice=currentSlice;
             handles.sortedSpotData.scaledValues=spotVSortedScaled;
         end;
@@ -1357,7 +1363,7 @@ while 1%check to see if 128 has any embryos in it
     if handles.highMemory
         currentSlice=stk(:,:,currentZ);
     else
-        [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.segStacks,currentZ,handles);
+        [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.scaledStack,currentZ,handles);
         handles.dataStructure.scaledSlice=currentSlice;
         handles.sortedSpotData.scaledValues=spotVSortedScaled;
     end;
@@ -1395,7 +1401,7 @@ while 1%check to see if 128 has any embryos in it
                 if handles.highMemory
                     currentSlice=handles.dataStructure.scaledStack(:,:,currentZ);
                 else
-                    [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.segStacks,currentZ,handles);
+                    [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.scaledStack,currentZ,handles);
                     handles.dataStructure.scaledSlice=currentSlice;
                     handles.sortedSpotData.scaledValues=spotVSortedScaled;
                 end;

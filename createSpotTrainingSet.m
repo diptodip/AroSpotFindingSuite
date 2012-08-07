@@ -47,9 +47,7 @@ end
 
 
 %Identify Spots
-posNumber=regexprep(stackSuffix,'Pos','');
-posNumber=regexprep(posNumber,'_','');
-posNumber=str2num(regexprep(posNumber,'_',''));
+posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
 
 disp('Load in spots information...')
 load(wormGaussianFitName);
@@ -186,11 +184,14 @@ elseif appendTrainingSet==1
     if ~isempty(iAppend)
         disp('Append newly picked spots to the training set...')
         trainingSet.spotInfo=[trainingSet.spotInfo;trainingSetToAppend.spotInfo(iAppend,:)];
+        
         for k=1:length(fieldsToAdd)
-            if ~sum(strcmp(fieldsToAdd{k},{'dataMat','dataFit'}))
-                trainingSet.stats.(fieldsToAdd{k})=[trainingSet.stats.(fieldsToAdd{k});trainingSetToAppend.stats.(fieldsToAdd{k})(iAppend,:)];
-            else
-                trainingSet.stats.(fieldsToAdd{k})=[trainingSet.stats.(fieldsToAdd{k});trainingSetToAppend.stats.(fieldsToAdd{k})(iAppend,:,:)];
+            if ~strcmp(fieldsToAdd{k},'spotInfoNumberInWorm')
+                if ~sum(strcmp(fieldsToAdd{k},{'dataMat','dataFit'}))
+                    trainingSet.stats.(fieldsToAdd{k})=[trainingSet.stats.(fieldsToAdd{k});trainingSetToAppend.stats.(fieldsToAdd{k})(iAppend,:)];
+                else
+                    trainingSet.stats.(fieldsToAdd{k})=[trainingSet.stats.(fieldsToAdd{k});trainingSetToAppend.stats.(fieldsToAdd{k})(iAppend,:,:)];
+                end
             end
         end
         trainingSet.dataMatrix.Y=[trainingSet.dataMatrix.Y;trainingSetToAppend.dataMatrix.Y(iAppend,:)];
@@ -206,14 +207,14 @@ elseif appendTrainingSet==1
     [~,~,v]=svd(allDataPixelValuesCentered,0);
     trainingSet.svdBasisRightMultiplier=(v')^(-1);
     rotatedAllDataPixelValues=allDataPixelValuesCentered*trainingSet.svdBasisRightMultiplier;
-    trainingSet.stats.sv=zeros(length(trainingSet.spotInfo),5);
+    %trainingSet.stats.sv=zeros(length(trainingSet.spotInfo),5);
     for i=1:5
         %take the first five coordinates in the new basis
         trainingSet.stats.(['sv' num2str(i)])=rotatedAllDataPixelValues(:,i);
     end;
     
     trainingSet.dataMatrix.X=[trainingSet.dataMatrix.X;trainingSetToAppend.dataMatrix.X(iAppend,:)];
-    trainingSet.dataMatrix.X(:,end-4:end)=trainingSet.stats.sv;
+    %trainingSet.dataMatrix.X(:,end-4:end)=trainingSet.stats.sv;
     trainingSet.FileName=trainingSetName;
     disp('Saving the training set...')
     save(fullfile(pwd,trainingSetName),'trainingSet')
