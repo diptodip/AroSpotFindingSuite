@@ -238,6 +238,7 @@ if exist(segStacksFileName,'file')
                                 %moved to 1p2
                                 %old way:
                                 %tgs=calculateFISHStatistics(dataMat,spotRFilt(si)-NR+1,spotCFilt(si)-WC+1,adjacentSlices);      %nameMod
+                                
                                 tgs=calculateFISHStatistics(dataColumn,spotRFilt(si)-NR+1,spotCFilt(si)-WC+1,zi,0,bleachFactors(:,ci));       %nameMod
                                 %disp('just got stats from calculateFISHStatistics_1p4 on line 206');
                                 %disp(tgs.statValues);

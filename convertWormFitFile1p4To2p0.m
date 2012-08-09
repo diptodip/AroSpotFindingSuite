@@ -79,7 +79,7 @@ wormFitFileName=[prefix '_wormGaussianFit.mat'];
         for iSpot=1:nSpots
             if isfield(old.worms{iWorm}.spotInfo{iSpot}.stat,'statValues')
                 spotInfo=old.worms{iWorm}.spotInfo{iSpot};
-                worms{iWorm}.spotDataVector.locationStack(iSpot,:)=spotInfo.locations.stack;
+                worms{iWorm}.spotDataVector.locationStack(iSpot,:)=spotInfo.locations.worm;%note that this should be worm not stack because the stacks are now worms
                 worms{iWorm}.spotDataVector.spotInfoNumberInWorm(iSpot)=iSpot;
                 worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'rawValue',iSpot);
                 worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'filteredValue',iSpot);
