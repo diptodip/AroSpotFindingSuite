@@ -27,8 +27,13 @@ function createSegImages(stackFileType,varargin)
 disp(['Stack file type is: ' stackFileType]);
 disp('Determine the channels available : ')
 if strcmp(stackFileType,'stk')
-    initialnumber = '001';
-    d = dir(['*' initialnumber '*.stk']);
+    d=[];%8Aug2012SR in case the first one isn't 0
+    initialnumber=0;%8Aug2012SR
+    while isempty(d)%8Aug2012SR
+        initialnumber=initialnumber+1;%8Aug2012SR
+        d = dir(sprintf('*%03d*.stk',initialnumber));%8Aug2012SR
+    end;%8Aug2012SR
+    initialnumber=sprintf('%03d',initialnumber);
     currcolor = 1;
     for i = 1:length(d)
         tmp = strrep(d(i).name,[initialnumber '.stk'],'');
@@ -60,7 +65,7 @@ disp(dye);
 
 stacks=dir('segmenttrans*');
 stackSize=zeros(length(dye),3);
-                
+
 if ~isempty(varargin)
     reSize=varargin{1};
 else
@@ -105,14 +110,20 @@ parfor i=1:length(stacks)%6Aug12 SR
             if strcmp(stackFileType,'stk')
                 if exist([dye{di} stackSuffix '.stk'],'file')
                     disp(['reading ' dye{di} stackSuffix '.stk']);
-                    stackInfo=readmm([dye{di} stackSuffix '.stk']);
-                    stack=stackInfo.imagedata;
-                    stackInfo=[];%6Aug12 SR
-                    %clear stackInfo%6Aug12 SR
-                    stack=double(stack);
-                    stackFound=1;
+                    %if there is something wrong with the reading the .stk
+                    try
+                        stackInfo=readmm([dye{di} stackSuffix '.stk']);
+                        stack=stackInfo.imagedata;
+                        stackInfo=[];%6Aug12 SR
+                        %clear stackInfo%6Aug12 SR
+                        stack=double(stack);
+                        stackFound=1;
+                    catch ME
+                        %stackFound remains 0
+                        fprintf('%s reading stack %s %s\n',ME.message, dye{di},stackSuffix);%6Aug12 SR
+                    end;
                 else
-                    fprintf('Failed to find the file %s .', [dye{di} stackSuffix '.stk'])
+                    fprintf('Failed to find the file %s .\n', [dye{di} stackSuffix '.stk'])
                 end
             elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
                 if exist([dye{di} '_' stackSuffix '.tif'],'file')
@@ -122,7 +133,7 @@ parfor i=1:length(stacks)%6Aug12 SR
                     stack=readTiffStack([dye{di} '__' stackSuffix '.tif']);
                     stackFound=1;
                 else
-                    fprintf('Failed to find the file %s .', [dye{di} '_' stackSuffix '.tif'])
+                    fprintf('Failed to find the file %s .\n', [dye{di} '_' stackSuffix '.tif'])
                 end
             end
             if stackFound%this will remain 0 if the file was not found %6Aug12 SR
@@ -135,8 +146,8 @@ parfor i=1:length(stacks)%6Aug12 SR
                     segMasks{wi}=wormMask;
                     
                     for zi=1:size(stack,3)
-                    %disp(bb.BoundingBox);
-                    %disp(size(stack(:,:,zi)));
+                        %disp(bb.BoundingBox);
+                        %disp(size(stack(:,:,zi)));
                         wormImage(:,:,zi)=double(imcrop(stack(:,:,zi),bb.BoundingBox)).*wormMask;
                         wil=wormImage(:,:,zi);
                         wil=wil(wil>0);%don't change to their suggested equivalent...doesn't work
@@ -162,12 +173,11 @@ parfor i=1:length(stacks)%6Aug12 SR
                 
                 %clear stack
                 stack=[];
-            end;%6Aug12 SR
+            end;
         else
             fprintf('%s segStacks of %s is already saved.\n', dye{di},stackSuffix)
             
         end
-        fprintf('\n')
         
     end
 end

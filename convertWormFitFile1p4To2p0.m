@@ -4,15 +4,18 @@ versionName='v2.0';
 worms=cell(size(old.worms,2),1);
 exactSame={'numberOfPlanes','cutoffStat','cutoffStatisticValue','cutoffPercentile','regMaxSpots','goodWorm'};
 wormFitFileName=[prefix '_wormGaussianFit.mat'];
-if ~exist(wormFitFileName,'file')
+%if ~exist(wormFitFileName,'file')
     for iWorm=1:size(worms,1)
         worms{iWorm}.segStackFile=[prefix '_SegStacks.mat'];
         worms{iWorm}.version=versionName;
         worms{iWorm}.functionVersion={mfilename; versionName; datestr(now)};
         for i=1:length(exactSame)
-            worms{iWorm}.(exactSame{i})=old.worms{iWorm}.(exactSame{i});
+            worms{iWorm}=mapOldToNew(worms{iWorm},old.worms{iWorm},exactSame{i});
+            
+            %worms{iWorm}.(exactSame{i})=old.worms{iWorm}.(exactSame{i});
         end;
-        worms{iWorm}.bleachFactors=old.worms{iWorm}.bleachFactors';
+        worms{iWorm}=mapOldToNew(worms{iWorm},old.worms{iWorm},'bleachFactors');
+        %worms{iWorm}.bleachFactors=old.worms{iWorm}.bleachFactors';
         %spotDataVectors
         %First set them up
         nSpots=size(old.worms{iWorm}.spotInfo,2);
@@ -71,25 +74,51 @@ if ~exist(wormFitFileName,'file')
         worms{iWorm}.spotDataVector.dataMat=zeros(nSpots,7,7);
         worms{iWorm}.spotDataVector.dataFit=zeros(nSpots,7,7);
         
+        
         %Now go through and assign them
         for iSpot=1:nSpots
-            spotInfo=old.worms{iWorm}.spotInfo{iSpot};
-            worms{iWorm}.spotDataVector.locationStack(iSpot,:)=spotInfo.locations.stack;
-            worms{iWorm}.spotDataVector.spotInfoNumberInWorm(iSpot)=iSpot;
-            worms{iWorm}.spotDataVector.rawValue(iSpot)=spotInfo.rawValue;
-            worms{iWorm}.spotDataVector.filteredValue(iSpot)=spotInfo.filteredValue;
-            worms{iWorm}.spotDataVector.spotRank(iSpot)=spotInfo.spotRank;
-            worms{iWorm}.spotDataVector.dataMat(iSpot,:,:)=spotInfo.dataMat;
-            worms{iWorm}.spotDataVector.dataFit(iSpot,:,:)=spotInfo.stat.statValues.dataFit;
-            for iF=5:length(size1s)
-                worms{iWorm}.spotDataVector.(size1s{iF})=spotInfo.stat.statValues.(size1s{iF});
+            if isfield(old.worms{iWorm}.spotInfo{iSpot}.stat,'statValues')
+                spotInfo=old.worms{iWorm}.spotInfo{iSpot};
+                worms{iWorm}.spotDataVector.locationStack(iSpot,:)=spotInfo.locations.stack;
+                worms{iWorm}.spotDataVector.spotInfoNumberInWorm(iSpot)=iSpot;
+                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'rawValue',iSpot);
+                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'filteredValue',iSpot);
+                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'spotRank',iSpot);
+                worms{iWorm}.spotDataVector=mapOldToNew3D(spotInfo.stat.statValues,worms{iWorm}.spotDataVector,'dataFit',iSpot);
+                worms{iWorm}.spotDataVector=mapOldToNew3D(spotInfo,worms{iWorm}.spotDataVector,'dataMat',iSpot);
+                for iF=5:length(size1s)
+                                    worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo.stat.statValues,worms{iWorm}.spotDataVector,size1s{iF},iSpot);
+
+                    %worms{iWorm}.spotDataVector.(size1s{iF})=spotInfo.stat.statValues.(size1s{iF});
+                end;
             end;
         end;
     end;
     save(wormFitFileName,'worms');
     disp([wormFitFileName ' converted']);
+%else
+    %disp([wormFitFileName ' already exists']);
+%end;
+
+end
+
+function new=mapOldToNew(old,new,fieldname)
+if isfield(old,fieldname)
+    new.(fieldname)=old.(fieldname);
 else
-    disp([wormFitFileName ' already exists']);
+    new.(fieldname)=[];
+end;
+end
+
+function new=mapOldToNew2(spotInfo,new,fieldname,iSpot)
+if isfield(spotInfo,fieldname)
+    new.(fieldname)(iSpot)=spotInfo.(fieldname);
+end;
+end
+
+function new=mapOldToNew3D(spotInfo,new,fieldname,iSpot)
+if isfield(spotInfo,fieldname)
+    new.(fieldname)(iSpot,:,:)=spotInfo.(fieldname);
 end;
 
 end
