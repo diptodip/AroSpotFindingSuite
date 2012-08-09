@@ -29,44 +29,47 @@ else
     appendTrainingSet=varargin{1};
 end
 
-if exist(trainingSetName, 'file')
-    reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
-    if isempty(reply)
-        reply='N';
-    end
-    
-    if strcmpi(reply,'y')
-        appendTrainingSet=0;
-    else strcmpi(reply,'n')
-        appendTrainingSet=1;
-    end
-else
-    appendTrainingSet=0;
-end
-
+% if exist(trainingSetName, 'file')
+%     reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
+%     if isempty(reply)
+%         reply='N';
+%     end
+%
+%     if strcmpi(reply,'y')
+%         appendTrainingSet=0;
+%     else strcmpi(reply,'n')
+%         appendTrainingSet=1;
+%     end
+% else
+%     appendTrainingSet=0;
+% end
+%
 
 
 %Identify Spots
-posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
+% posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
+% disp('Load in spots information...')
+% load(wormGaussianFitName);
+% wormNum=size(worms);
+% stackH=worms{1}.numberOfPlanes;
+% w=[1:wormNum];
+% spotsInWorm=zeros(wormNum);
+% for wi=1:wormNum
+%     spotsInWorm(wi)=length(worms{wi}.spotDataVector.rawValue);
+% end
+% [~,index]=sort(spotsInWorm,'descend');
+% w=w(index);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-disp('Load in spots information...')
-load(wormGaussianFitName);
-wormNum=size(worms);
-stackH=worms{1}.numberOfPlanes;
-w=[1:wormNum];
-spotsInWorm=zeros(wormNum);
-for wi=1:wormNum
-    spotsInWorm(wi)=length(worms{wi}.spotDataVectors.rawValue);
-end
-[~,index]=sort(spotsInWorm,'descend');
-w=w(index);
+oldDir='Version1.4.Analyses';
+
 
 disp('Load in segmented stacks...')
-load(segStacksName);
+%load(segStacksName);
 
 disp('Identify spots in worms...')
 % for wi=1:wormNum
-%     
+%
 %     [goodSpots,badSpots]=identifySpots(floor(stackH/8),segStacks,segMasks,worms,w(wi));
 %     if wi==1
 %         goldSpotsData=goodSpots;
@@ -82,43 +85,151 @@ disp('Identify spots in worms...')
 % end
 % clear segStacks
 %%%% Load preexisting spot files
-load(['goldSpots_' dye '_' probeName '.mat']);
-load(['rejectedSpots_' dye '_' probeName '.mat']);
+%load([oldDir filesep 'goldSpots_' dye '_' probeName '.mat']);
+%load([oldDir filesep 'rejectedSpots_' dye '_' probeName '.mat']);
+load([ 'goldSpots_' dye '_' probeName '.mat']);
+load([ 'rejectedSpots_' dye '_' probeName '.mat']);
+%note that these have locations in whole 1024x1024 stack so need to get
+%worm specific locations from these
+%also is structure such that fields are the stack name
+%gold
+trainingSet.spotInfo=[];
+spotsNotFound=[0 0];
+%gold
+gFN=fieldnames(goldSpots);
+for iFN=1:size(gFN,1)
+    posNumber=collectDigits(gFN{iFN});
+    %load the worm file
+    load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
+    for iG=1:size(goldSpots.(gFN{iFN}),1)
+        
+        r=goldSpots.(gFN{iFN})(iG,1);
+        c=goldSpots.(gFN{iFN})(iG,2);
+        z=goldSpots.(gFN{iFN})(iG,3);
+        %        fprintf('%s %d %d %d %d\n',gFN{iG}, iG, r,c,z);
+        %which worm is it in?
+        wormNum=0;
+        for wi=1:length(worms)
+            if worms{wi}.mask(r,c)>0
+                wormNum=wi;
+                break
+            end;
+        end;
+        if ~wormNum
+            disp('Problem, wormNum is 0!! spot not found where it should be');
+            %             disp(goldSpots.(gFN{iG})(iG,:));
+            %             disp([r c z]);
+            %             for iW=1:length(worms)
+            %             disp(worms{iW}.boundingBox.BoundingBox);
+            %             end;
+            spotsNotFound(1)=spotsNotFound(1)+1;
+        else
+            %what is the spotNumber in that worm?
+            toSubtractFromR=floor(worms{wormNum}.boundingBox.BoundingBox(2));
+            toSubtractFromC=floor(worms{wormNum}.boundingBox.BoundingBox(1));
+            locationStack=[r-toSubtractFromR,c-toSubtractFromC,z];
+            %find it in the worm
+            spotIndex=find(ismember(worms{wormNum}.spotDataVector.locationStack,locationStack,'rows'));
+            if ~isempty(spotIndex)%if it can't find it for some reason, don't worry about it. This may be a holdover from pre-maxima days, although I don't think so
+                classification=1;
+                trainingSet.spotInfo=[trainingSet.spotInfo; str2num(posNumber{1}) wormNum spotIndex classification];
+            else
+                spotsNotFound(1)=spotsNotFound(1)+1;
+            end;
+        end;
+        
+    end;
+end;
+disp('gold done');
+%rejected
+rFN=fieldnames(rejectedSpots);
+for iFN=1:size(rFN,1)
+    posNumber=collectDigits(rFN{iFN});
+    %load the worm file
+    load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
+    for iR=1:size(rejectedSpots.(rFN{iFN}),1)
+        r=rejectedSpots.(rFN{iFN})(iR,1);
+        c=rejectedSpots.(rFN{iFN})(iR,2);
+        z=rejectedSpots.(rFN{iFN})(iR,3);
+        
+        %which worm is it in?
+        wormNum=0;
+        for wi=1:length(worms)
+            if worms{wi}.mask(r,c)>0
+                wormNum=wi;
+                break
+            end;
+        end;
+        if ~wormNum
+            disp('Problem, wormNum is 0!! spot not found where it should be');
+            spotsNotFound(2)=spotsNotFound(2)+1;
+        else
+            
+            %what is the spotNumber in that worm?
+            toSubtractFromR=floor(worms{wormNum}.boundingBox.BoundingBox(2));
+            toSubtractFromC=floor(worms{wormNum}.boundingBox.BoundingBox(1));
+            locationStack=[r-toSubtractFromR,c-toSubtractFromC,z];
+            %find it in the worm
+            spotIndex=find(ismember(worms{wormNum}.spotDataVector.locationStack,locationStack,'rows'));
+            if ~isempty(spotIndex)%if it can't find it for some reason, don't worry about it. This may be a holdover from pre-maxima days, although I don't think so
+                
+                classification=0;
+                trainingSet.spotInfo=[trainingSet.spotInfo; str2num(posNumber{1}) wormNum spotIndex classification];
+            else
+                spotsNotFound(2)=spotsNotFound(2)+1;
+            end;
+        end;
+    end;
+end;
+disp('rejected done');
+disp('spotsNotFound')
+disp(spotsNotFound);
+% goldNum=size(goldSpotsData,1);
+% rejNum=size(rejectedSpotsData,1);
+% spotNum=goldNum+rejNum;
+%
+% % [posNumber, wormNumber, spotIndex, classification]
+% trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)];
+% trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)];
+spotNum=size(trainingSet.spotInfo,1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
-goldNum=size(goldSpotsData,1);
-rejNum=size(rejectedSpotsData,1);
-spotNum=goldNum+rejNum;
-
-% [posNumber, wormNumber, spotIndex, classification]
-trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)];
-trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)];
 trainingSet.stats=struct;
 % Add stats info to training set
-fieldsToAdd=fields(worms{1}.spotDataVectors);
-for fta=1:length(fieldsToAdd)
-    for wi=1:length(worms)
-        wormData=worms{wi};
-        wormIndex=(trainingSet.spotInfo(:,2)==wi);
-        spotIndex=(trainingSet.spotInfo(wormIndex,3));
-        if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm')
-            if ~isfield(trainingSet.stats, fieldsToAdd{fta})
-                if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                    trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex);
+fieldsToAdd=fields(worms{1}.spotDataVector);
+
+
+posNumbers=unique(trainingSet.spotInfo(:,1));
+for iP=1:length(posNumbers)
+    posNum=posNumbers(iP);
+    load(sprintf('%s_%03d_wormGaussianFit.mat',dye,posNum));
+    
+    for fta=1:length(fieldsToAdd)
+        for wi=1:length(worms)
+            wormData=worms{wi};
+            wormIndex=find(trainingSet.spotInfo(:,2)==wi);
+            posIndex=find(trainingSet.spotInfo(:,1)==posNum);
+            toUseIndex=intersect(wormIndex,posIndex);
+            spotIndex=(trainingSet.spotInfo(toUseIndex,3));
+            if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm')
+                if ~isfield(trainingSet.stats, fieldsToAdd{fta})
+                    if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
+                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex);
+                    else
+                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex,:,:);
+                    end
                 else
-                    trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:);
-                end
-            else
-                if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                    trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex)];
-                else
-                    trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:)];
+                    if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
+                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex)];
+                    else
+                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex,:,:)];
+                    end
                 end
             end
         end
+        
     end
-    
 end
 
 % Calculate SVD
