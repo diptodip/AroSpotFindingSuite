@@ -66,30 +66,30 @@ wormFitFileName=[prefix '_wormGaussianFit.mat'];
             'fraction_3ring',...
             'total_area'};
         
-        worms{iWorm}.spotDataVector =struct;
+        worms{iWorm}.spotDataVectors =struct;
         for iField=1:length(size1s)
-            worms{iWorm}.spotDataVector.(size1s{iField})=zeros(nSpots,1);
+            worms{iWorm}.spotDataVectors.(size1s{iField})=zeros(nSpots,1);
         end;
-        worms{iWorm}.spotDataVector.locationStack=zeros(nSpots,3);
-        worms{iWorm}.spotDataVector.dataMat=zeros(nSpots,7,7);
-        worms{iWorm}.spotDataVector.dataFit=zeros(nSpots,7,7);
+        worms{iWorm}.spotDataVectors.locationStack=zeros(nSpots,3);
+        worms{iWorm}.spotDataVectors.dataMat=zeros(nSpots,7,7);
+        worms{iWorm}.spotDataVectors.dataFit=zeros(nSpots,7,7);
         
         
         %Now go through and assign them
         for iSpot=1:nSpots
             if isfield(old.worms{iWorm}.spotInfo{iSpot}.stat,'statValues')
                 spotInfo=old.worms{iWorm}.spotInfo{iSpot};
-                worms{iWorm}.spotDataVector.locationStack(iSpot,:)=spotInfo.locations.worm;%note that this should be worm not stack because the stacks are now worms
-                worms{iWorm}.spotDataVector.spotInfoNumberInWorm(iSpot)=iSpot;
-                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'rawValue',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
-                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'filteredValue',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
-                worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVector,'spotRank',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
-                worms{iWorm}.spotDataVector=mapOldToNew3D(spotInfo.stat.statValues,worms{iWorm}.spotDataVector,'dataFit',iSpot);%mapOldToNew3D(spotInfo,new,fieldname,iSpot)
-                worms{iWorm}.spotDataVector=mapOldToNew3D(spotInfo,worms{iWorm}.spotDataVector,'dataMat',iSpot);%mapOldToNew3D(spotInfo,new,fieldname,iSpot)
+                worms{iWorm}.spotDataVectors.locationStack(iSpot,:)=spotInfo.locations.worm;%note that this should be worm not stack because the stacks are now worms
+                worms{iWorm}.spotDataVectors.spotInfoNumberInWorm(iSpot)=iSpot;
+                worms{iWorm}.spotDataVectors=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVectors,'rawValue',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
+                worms{iWorm}.spotDataVectors=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVectors,'filteredValue',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
+                worms{iWorm}.spotDataVectors=mapOldToNew2(spotInfo,worms{iWorm}.spotDataVectors,'spotRank',iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
+                worms{iWorm}.spotDataVectors=mapOldToNew3D(spotInfo.stat.statValues,worms{iWorm}.spotDataVectors,'dataFit',iSpot);%mapOldToNew3D(spotInfo,new,fieldname,iSpot)
+                worms{iWorm}.spotDataVectors=mapOldToNew3D(spotInfo,worms{iWorm}.spotDataVectors,'dataMat',iSpot);%mapOldToNew3D(spotInfo,new,fieldname,iSpot)
                 for iF=5:length(size1s)
-                                    worms{iWorm}.spotDataVector=mapOldToNew2(spotInfo.stat.statValues,worms{iWorm}.spotDataVector,size1s{iF},iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
+                                    worms{iWorm}.spotDataVectors=mapOldToNew2(spotInfo.stat.statValues,worms{iWorm}.spotDataVectors,size1s{iF},iSpot);%mapOldToNew2(spotInfo,new,fieldname,iSpot)
 
-                    %worms{iWorm}.spotDataVector.(size1s{iF})=spotInfo.stat.statValues.(size1s{iF});
+                    %worms{iWorm}.spotDataVectors.(size1s{iF})=spotInfo.stat.statValues.(size1s{iF});
                 end;
             end;
         end;
@@ -99,6 +99,9 @@ wormFitFileName=[prefix '_wormGaussianFit.mat'];
 %else
     %disp([wormFitFileName ' already exists']);
 %end;
+
+
+
 
 end
 
