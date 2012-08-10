@@ -93,6 +93,7 @@ load([ 'rejectedSpots_' dye '_' probeName '.mat']);
 %worm specific locations from these
 %also is structure such that fields are the stack name
 %gold
+trainingSet.FileName=trainingSetName;
 trainingSet.spotInfo=[];
 spotsNotFound=[0 0];
 %gold

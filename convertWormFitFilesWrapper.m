@@ -54,7 +54,7 @@ for iDir=1:length(dirs)
                     %if ~exist([prefix '_wormGaussianFit.mat'],'file')
                         if exist([oldDir filesep shortPrefix '_wormGaussianFit.mat'],'file')
                             old=load([oldDir filesep shortPrefix '_wormGaussianFit.mat']);
-                            disp(['converting ' oldDir filesep shortPrefix '_wormGaussianFit.mat']);
+                            disp(['converting ' dirs(iDir).name filesep oldDir filesep shortPrefix '_wormGaussianFit.mat']);
                             convertWormFitFile1p4To2p0(old,prefix);
                         else
                             disp([oldDir filesep shortPrefix '_wormGaussianFit.mat does not exist']);
