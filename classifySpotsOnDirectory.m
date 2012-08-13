@@ -56,12 +56,13 @@ else
 end
 
 
-for i=1:length(stacks)
+parfor i=1:length(stacks)
     stackName=stacks(i).name;
     [dye, ~, ~, ~,spotStatsFileName]=parseStackNames(regexprep(stackName,'_wormGaussianFit.mat',''));
-    load(stacks(i).name)
-    
+    ae=load(stacks(i).name);
+    worms=ae.worms;
     if sum(strcmpi(dye,dyeToDo))~=0
+        try
         if toOverWrite
             fprintf('Doing %...\n', stacks(i).name)
             spotStats=classifySpots(worms,trainingSet);
@@ -73,7 +74,17 @@ for i=1:length(stacks)
                 spotStats=classifySpots(worms,trainingSet);
             end
         end
+        catch ME
+                parsaveProblem(ME,stacks(i).name);
+        end;
+                
     end
     
 end
+end
+
+%%
+function parsaveProblem(error,stackname)
+
+    save('PROBLEM.mat','error','stackname');
 end
