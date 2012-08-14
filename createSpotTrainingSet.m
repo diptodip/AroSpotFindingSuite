@@ -97,16 +97,16 @@ for fta=1:length(fieldsToAdd)
         wormData=worms{wi};
         wormIndex=(trainingSet.spotInfo(:,2)==wi);
         spotIndex=(trainingSet.spotInfo(wormIndex,3));
-        if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm')
+        if ~sum(strcmp(fieldsToAdd{fta},{'spotInfoNumberInWorm','nucLocation','distanceToNuc'}))
             if ~isfield(trainingSet.stats, fieldsToAdd{fta})
                 if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                    trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex);
+                    trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:);
                 else
                     trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:);
                 end
             else
                 if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                    trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex)];
+                    trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:)];
                 else
                     trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:)];
                 end
@@ -186,7 +186,7 @@ elseif appendTrainingSet==1
         trainingSet.spotInfo=[trainingSet.spotInfo;trainingSetToAppend.spotInfo(iAppend,:)];
         
         for k=1:length(fieldsToAdd)
-            if ~strcmp(fieldsToAdd{k},'spotInfoNumberInWorm')
+            if ~sum(strcmp(fieldsToAdd{k},{'spotInfoNumberInWorm','nucLocation','distanceToNuc'}))
                 if ~sum(strcmp(fieldsToAdd{k},{'dataMat','dataFit'}))
                     trainingSet.stats.(fieldsToAdd{k})=[trainingSet.stats.(fieldsToAdd{k});trainingSetToAppend.stats.(fieldsToAdd{k})(iAppend,:)];
                 else
@@ -215,10 +215,11 @@ elseif appendTrainingSet==1
     
     trainingSet.dataMatrix.X=[trainingSet.dataMatrix.X;trainingSetToAppend.dataMatrix.X(iAppend,:)];
     %trainingSet.dataMatrix.X(:,end-4:end)=trainingSet.stats.sv;
-    trainingSet.FileName=trainingSetName;
-    disp('Saving the training set...')
-    save(fullfile(pwd,trainingSetName),'trainingSet')
+
 end
+trainingSet.FileName=trainingSetName;
+disp('Saving the training set...')
+save(fullfile(pwd,trainingSetName),'trainingSet')
 
 fprintf('There are %d spots in total in the training set.\n', length(trainingSet.dataMatrix.Y))
 fprintf('%d good spots and %d bad spots were chosen.\n', sum(trainingSet.dataMatrix.Y),sum(trainingSet.dataMatrix.Y==0));

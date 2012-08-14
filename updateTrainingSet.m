@@ -26,7 +26,7 @@ statsToUse = {'intensity';'rawIntensity';'totalHeight';'sigmax';'sigmay';'estima
 
 % toRemove=varargin{1} remove or add spot, default=0
 % Check if the newly added spot is already in the training set.
-spotInfo
+%spotInfo
 if isempty(varargin)
     toRemove=0;
 else
@@ -48,14 +48,14 @@ for si=1:size(spotInfo,1)
                 
                 if ~isfield(trainingSet.stats, statNames{st})
                     if ~sum(strcmp(statNames{st},{'dataMat','dataFit'}))
-                        trainingSet.stats.(statNames{st})=wormData.spotDataVectors.(statNames{st})(spotIndex);
+                        trainingSet.stats.(statNames{st})=wormData.spotDataVectors.(statNames{st})(spotIndex,:);
                     else
                         trainingSet.stats.(statNames{st})=wormData.spotDataVectors.(statNames{st})(spotIndex,:,:);
                     end
                 else
                     if ~sum(strcmp(statNames{st},{'dataMat','dataFit'}))
                         %display(statNames{st})
-                        trainingSet.stats.(statNames{st})=[trainingSet.stats.(statNames{st});wormData.spotDataVectors.(statNames{st})(spotIndex)];
+                        trainingSet.stats.(statNames{st})=[trainingSet.stats.(statNames{st});wormData.spotDataVectors.(statNames{st})(spotIndex,:)];
                     else
                         trainingSet.stats.(statNames{st})=[trainingSet.stats.(statNames{st});wormData.spotDataVectors.(statNames{st})(spotIndex,:,:)];
                     end

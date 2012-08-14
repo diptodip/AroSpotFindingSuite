@@ -2,7 +2,7 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 
 %% =============================================================
 %   Name:    reviewFISHClassification.m   
-%   Version: 2.0, 10th July 2012    
+%   Version: 2.1, 10th July 2012    
 %   Authors:  Allison Wu, Scott Rifkin 
 %   Command:  reviewFISHClassification(stackName*) *Optional Input
 %   Description: reviewFISHClassification.m is a gui to browse the results of the spot finding algorithm, estimate and/or correct errors, and retraing the classifier if specified.
@@ -64,6 +64,8 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %   Files required: the corresponding **_segStacks.mat, **_wormGaussianFit.mat, trainingSet_**.mat, **_spotStats.mat
 %   Files generated: overwrites all the files mentioned above except for **_segStacks.mat
 %
+%   Updates: 
+%       - 2012 Aug 13th, small bug fixes
 %   Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
 %   License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
@@ -962,12 +964,13 @@ function undoTheLast_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-spotBeingRemoved=handles.spotsCurated(end,1:4);
-handles.spotStats{handles.iCurrentWorm}.classification(:,3)=handles.spotsCurated(end,end); % adjust back to the original state
-handles.spotsCurated=handles.spotsCurated(1:end-1,:);
-handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,spotBeingRemoved,1); % update the training set.
+spotBeingRemoved=handles.spotsCurated(end,:);
+handles.spotStats{handles.iCurrentWorm}.classification(spotBeingRemoved(3),3)=handles.spotsCurated(end,end); % adjust back to the original state
+handles.spotStats{handles.iCurrentWorm}.classification(spotBeingRemoved(3),1)=-1;
+handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,spotBeingRemoved([1 2 3 5]),1); % update the training set.
 
 iSpotBeingRemoved_allLocs=find(handles.allLocs(:,6)==spotBeingRemoved(3));
+handles.spotsCurated=handles.spotsCurated(1:end-1,:);
 disp('The Spot is removed.')
 
 if isfield(handles.rectangleHandles{iSpotBeingRemoved_allLocs},'trainingLine')
@@ -978,7 +981,13 @@ if isfield(handles.rectangleHandles{iSpotBeingRemoved_allLocs},'curationLine')
     delete(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.curationLine);
 end
 
-delete(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect);
+%delete(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect);
+if spotBeingRemoved(end)== 1 % origianlly a good spot
+    set(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect,'EdgeColor',[0.1,0.1,0.5]);
+elseif spotBeingRemoved(end)==0
+    disp('hello')
+    set(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect,'EdgeColor',[0.5,0.5,0.1]);
+end
 
 handles.nGoodToRejected=sum((handles.spotsCurated(:,5)==1).*(handles.spotsCurated(:,4)==0));
 handles.nRejectedToGood=sum((handles.spotsCurated(:,5)==0).*(handles.spotsCurated(:,4)==1));

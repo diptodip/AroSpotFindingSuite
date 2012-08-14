@@ -55,7 +55,7 @@ end
 % w=[1:wormNum];
 % spotsInWorm=zeros(wormNum);
 % for wi=1:wormNum
-%     spotsInWorm(wi)=length(worms{wi}.spotDataVector.rawValue);
+%     spotsInWorm(wi)=length(worms{wi}.spotDataVectors.rawValue);
 % end
 % [~,index]=sort(spotsInWorm,'descend');
 % w=w(index);
@@ -101,7 +101,8 @@ gFN=fieldnames(goldSpots);
 for iFN=1:size(gFN,1)
     posNumber=collectDigits(gFN{iFN});
     %load the worm file
-    load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
+    old=load(sprintf('%s%s%s%s_wormGaussianFit.mat',oldDir,filesep,dye,posNumber{1}));
+    new=load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
     for iG=1:size(goldSpots.(gFN{iFN}),1)
         
         r=goldSpots.(gFN{iFN})(iG,1);
@@ -110,8 +111,8 @@ for iFN=1:size(gFN,1)
         %        fprintf('%s %d %d %d %d\n',gFN{iG}, iG, r,c,z);
         %which worm is it in?
         wormNum=0;
-        for wi=1:length(worms)
-            if worms{wi}.mask(r,c)>0
+        for wi=1:length(old.worms)
+            if old.worms{wi}.mask(r,c)>0
                 wormNum=wi;
                 break
             end;
@@ -126,11 +127,11 @@ for iFN=1:size(gFN,1)
             spotsNotFound(1)=spotsNotFound(1)+1;
         else
             %what is the spotNumber in that worm?
-            toSubtractFromR=floor(worms{wormNum}.boundingBox.BoundingBox(2));
-            toSubtractFromC=floor(worms{wormNum}.boundingBox.BoundingBox(1));
+            toSubtractFromR=floor(old.worms{wormNum}.boundingBox.BoundingBox(2));
+            toSubtractFromC=floor(old.worms{wormNum}.boundingBox.BoundingBox(1));
             locationStack=[r-toSubtractFromR,c-toSubtractFromC,z];
             %find it in the worm
-            spotIndex=find(ismember(worms{wormNum}.spotDataVector.locationStack,locationStack,'rows'));
+            spotIndex=find(ismember(new.worms{wormNum}.spotDataVectors.locationStack,locationStack,'rows'));
             if ~isempty(spotIndex)%if it can't find it for some reason, don't worry about it. This may be a holdover from pre-maxima days, although I don't think so
                 classification=1;
                 trainingSet.spotInfo=[trainingSet.spotInfo; str2num(posNumber{1}) wormNum spotIndex classification];
@@ -147,7 +148,8 @@ rFN=fieldnames(rejectedSpots);
 for iFN=1:size(rFN,1)
     posNumber=collectDigits(rFN{iFN});
     %load the worm file
-    load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
+    old=load(sprintf('%s%s%s%s_wormGaussianFit.mat',oldDir,filesep,dye,posNumber{1}));
+    new=load(sprintf('%s_%s_wormGaussianFit.mat',dye,posNumber{1}));
     for iR=1:size(rejectedSpots.(rFN{iFN}),1)
         r=rejectedSpots.(rFN{iFN})(iR,1);
         c=rejectedSpots.(rFN{iFN})(iR,2);
@@ -155,8 +157,8 @@ for iFN=1:size(rFN,1)
         
         %which worm is it in?
         wormNum=0;
-        for wi=1:length(worms)
-            if worms{wi}.mask(r,c)>0
+        for wi=1:length(old.worms)
+            if old.worms{wi}.mask(r,c)>0
                 wormNum=wi;
                 break
             end;
@@ -167,11 +169,11 @@ for iFN=1:size(rFN,1)
         else
             
             %what is the spotNumber in that worm?
-            toSubtractFromR=floor(worms{wormNum}.boundingBox.BoundingBox(2));
-            toSubtractFromC=floor(worms{wormNum}.boundingBox.BoundingBox(1));
+            toSubtractFromR=floor(old.worms{wormNum}.boundingBox.BoundingBox(2));
+            toSubtractFromC=floor(old.worms{wormNum}.boundingBox.BoundingBox(1));
             locationStack=[r-toSubtractFromR,c-toSubtractFromC,z];
             %find it in the worm
-            spotIndex=find(ismember(worms{wormNum}.spotDataVector.locationStack,locationStack,'rows'));
+            spotIndex=find(ismember(new.worms{wormNum}.spotDataVectors.locationStack,locationStack,'rows'));
             if ~isempty(spotIndex)%if it can't find it for some reason, don't worry about it. This may be a holdover from pre-maxima days, although I don't think so
                 
                 classification=0;
@@ -182,6 +184,8 @@ for iFN=1:size(rFN,1)
         end;
     end;
 end;
+worms=new.worms;
+clear('old','new');
 disp('rejected done');
 disp('spotsNotFound')
 disp(spotsNotFound);
@@ -198,9 +202,11 @@ spotNum=size(trainingSet.spotInfo,1);
 
 trainingSet.stats=struct;
 % Add stats info to training set
-fieldsToAdd=fields(worms{1}.spotDataVector);
+fieldsToAdd=fields(worms{1}.spotDataVectors);
 
 
+indicesInSpotInfo=1:size(trainingSet.spotInfo,1);
+orderIndicesAdded=[];
 posNumbers=unique(trainingSet.spotInfo(:,1));
 for iP=1:length(posNumbers)
     posNum=posNumbers(iP);
@@ -209,22 +215,29 @@ for iP=1:length(posNumbers)
     for fta=1:length(fieldsToAdd)
         for wi=1:length(worms)
             wormData=worms{wi};
-            wormIndex=find(trainingSet.spotInfo(:,2)==wi);
-            posIndex=find(trainingSet.spotInfo(:,1)==posNum);
-            toUseIndex=intersect(wormIndex,posIndex);
+            wormIndex=trainingSet.spotInfo(:,2)==wi;
+            posIndex=trainingSet.spotInfo(:,1)==posNum;
+            toUseIndex=find(wormIndex&posIndex);
+            %             wormIndex=find(trainingSet.spotInfo(:,2)==wi);
+            %             posIndex=find(trainingSet.spotInfo(:,1)==posNum);
+            %             toUseIndex=intersect(wormIndex,posIndex);
             spotIndex=(trainingSet.spotInfo(toUseIndex,3));
-            if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm')
+            if fta==1%just do this once
+                orderIndicesAdded=[orderIndicesAdded,indicesInSpotInfo(toUseIndex)];
+            end;
+            
+            if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm') && ~strcmp(fieldsToAdd{fta},'nucLocation') && ~strcmp(fieldsToAdd{fta},'distanceToNuc')
                 if ~isfield(trainingSet.stats, fieldsToAdd{fta})
                     if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex);
+                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex);
                     else
-                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex,:,:);
+                        trainingSet.stats.(fieldsToAdd{fta})=wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:);
                     end
                 else
                     if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
-                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex)];
+                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex)];
                     else
-                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVector.(fieldsToAdd{fta})(spotIndex,:,:)];
+                        trainingSet.stats.(fieldsToAdd{fta})=[trainingSet.stats.(fieldsToAdd{fta});wormData.spotDataVectors.(fieldsToAdd{fta})(spotIndex,:,:)];
                     end
                 end
             end
@@ -232,6 +245,20 @@ for iP=1:length(posNumbers)
         
     end
 end
+%now rejigger the order to match the spotInfo data
+[~,sortInds]=sort(orderIndicesAdded);
+
+for fta=1:length(fieldsToAdd)
+            if ~strcmp(fieldsToAdd{fta},'spotInfoNumberInWorm') && ~strcmp(fieldsToAdd{fta},'nucLocation') && ~strcmp(fieldsToAdd{fta},'distanceToNuc')
+    if ~sum(strcmp(fieldsToAdd{fta},{'dataMat','dataFit'}))
+        trainingSet.stats.(fieldsToAdd{fta})=trainingSet.stats.(fieldsToAdd{fta})(sortInds);
+    else
+        trainingSet.stats.(fieldsToAdd{fta})=trainingSet.stats.(fieldsToAdd{fta})(sortInds,:,:);
+    end
+end;
+end;
+%%%%%%%%%%%%%%%%% end order rejiggering
+
 
 % Calculate SVD
 allDataPixelValues=trainingSet.stats.dataMat(:,:);
