@@ -22,10 +22,8 @@ for iW=1:nWorms
     % sum(Probs(IQR<IQRt)>0.5)+sum(Probs(IQR>IQRt));
     worms{iW}.spotDataVectors.ThresholdedProbEstimates=spotStats{iW}.ProbEstimates;
     lessThanThreshold=find(spotStats{iW}.IQR<IQRt);
-    lessThanOneHalf=find(worms{iW}.spotDataVectors.ThresholdedProbEstimates<=.5);
-    greaterThanOneHalf=find(worms{iW}.spotDataVectors.ThresholdedProbEstimates>.5);
+    lessThanOneHalf=find(worms{iW}.spotDataVectors.ThresholdedProbEstimates<.5);
     worms{iW}.spotDataVectors.ThresholdedProbEstimates(intersect(lessThanThreshold,lessThanOneHalf))=0;
-    worms{iW}.spotDataVectors.ThresholdedProbEstimates(intersect(lessThanThreshold,greaterThanOneHalf))=1;
     
     worms{iW}.nucDataVectors=struct('nucLocations',nucLocs,'nRNASpots',zeros(size(nucLocs,1),1));
     for iN=1:size(nucLocs,1)

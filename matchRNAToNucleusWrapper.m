@@ -6,7 +6,7 @@ function matchRNAToNucleusWrapper()
 SexDetDir='/Volumes/rifkinlab/sarifkin/Projects/Worms/SexDet/';
 cd(SexDetDir);
 dirs=dir;
-doBeforeDate=datenum('12-Aug-2012 21:24:59');
+doBeforeDate=datenum('12-Sep-2012 21:24:59');
 for iDir=1:length(dirs)
     
     if dirs(iDir).isdir && ~strcmp(dirs(iDir).name(1),'.')
@@ -32,7 +32,18 @@ for iDir=1:length(dirs)
                         disp(['        Matching ' dirs(iDir).name filesep wormGaussianFits(i).name ' to ' 'nucLocations' position '.csv']);
                         try
                             nucLocs=dlmread(['nucLocations' position '.csv']);
-                            worms=matchRNAToNucleus(ae.worms,nucLocs);
+                            %load spotStats
+                                segStackName=worms{1}.segStackFile;
+                            prefix=regexprep(wormGaussianFits(i).name,'_wormGaussianFit.mat','');
+                            prefix=regexp(prefix,'_','split');
+                            dye=prefix{1};
+                            posNumber=prefix{2};
+                            posNumber=regexprep(posNumber,'Pos','');
+                            posNumber=regexprep(posNumber,'_','');
+                            posNumber=str2num(posNumber);
+                            spotStatsFile=[dye '_Pos' num2str(posNumber) '_spotStats.mat'];
+                            ssf=load(spotStatsFile);
+                            worms=matchRNAToNucleus(ae.worms,nucLocs,ssf.spotStats);
                             parsaveWorms(wormGaussianFits(i).name,worms);
                             disp(['        ** Matched ' dirs(iDir).name filesep wormGaussianFits(i).name ' to ' 'nucLocations' position '.csv']);
                         catch ME
