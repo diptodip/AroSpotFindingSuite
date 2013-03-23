@@ -3,16 +3,17 @@ function classifySpotsOnDirectory(varargin)
 %   Name:       classifySpotsOnDirectory.m
 %   Version:    2.0, 5th July 2012
 %   Author:     Allison Wu
-%   Command:    classifySpotsOnDirectory(toOverWrite*)  *Optional Input
+%   Command:    classifySpotsOnDirectory(toOverWrite,trainingSet,dye*)  *Optional Input
 %   Description: a wrapper function that calls classifySpots to execute on all the files on directory
-%       - classifySpotsOnDirectory(toOverWrite,trainingSet), optional inputs
+%       - classifySpotsOnDirectory(toOverWrite,trainingSet, dye*)
 %       - toOverWrtie=varargin{1}: [0,1], 0 by default.
 %         A flag that tells the code to overwrite spotStats.mat file or not.
 %       - trainingSet=varargin{2}:
 %         You can specify particular trained random forest to use by loading in the trainingSet.
-%       - If a particular trainingSet is specified, the user will be prompted with 2 questions:
-%               1) Which channel to apply the trained classifier on?
-%               2) What is the probe's name? 
+%       - If a particular trainingSet is specified but the dye is not specified, 
+%         the user will be prompted with entering the channel manually.
+%    
+%   Update Log: 2012.09.18 add in the dye input
 %% ========================================================================
 
 stacks=dir('*_wormGaussianFit.mat');
@@ -27,15 +28,23 @@ switch length(varargin)
         toOverWrite=varargin{1};
         trainingSet=varargin{2};
         trainingSetSpecified=1;
+    case 3
+        toOverWrite=varargin{1};
+        trainingSet=varargin{2};
+        reply=varargin{3};
+        trainingSetSpecified=1;
+        
 end
 
 if trainingSetSpecified
-    fprintf('%s is specified as the trainingSet...\n', trainingSet.FileName)
-    reply=input('Please specify the probe name: ','s');
-    probeName=reply;
+    %fprintf('%s is specified as the trainingSet...\n', trainingSet.FileName)
+    %probeName=input('Please specify the probe name: ','s');
     
     % Check which channel to apply the trained classifier on.
-    reply=input('Which channel do you want to apply your specified trained classifier on? [alexa, tmr, cy5 , all]: ','s');
+    if ~exist('reply','var')
+        reply=input('Which channel do you want to apply your specified trained classifier on? [alexa, tmr, cy5 , all]: ','s');
+    end
+    
     if isempty(reply)
         reply='all';
     else
@@ -56,13 +65,12 @@ else
 end
 
 
-parfor i=1:length(stacks)
+for i=1:length(stacks)
     stackName=stacks(i).name;
     [dye, ~, ~, ~,spotStatsFileName]=parseStackNames(regexprep(stackName,'_wormGaussianFit.mat',''));
-    ae=load(stacks(i).name);
-    worms=ae.worms;
+    load(stacks(i).name)
+    
     if sum(strcmpi(dye,dyeToDo))~=0
-        try
         if toOverWrite
             fprintf('Doing %...\n', stacks(i).name)
             spotStats=classifySpots(worms,trainingSet);
@@ -74,17 +82,7 @@ parfor i=1:length(stacks)
                 spotStats=classifySpots(worms,trainingSet);
             end
         end
-        catch ME
-                parsaveProblem(ME,stacks(i).name);
-        end;
-                
     end
     
 end
-end
-
-%%
-function parsaveProblem(error,stackname)
-
-    save('PROBLEM.mat','error','stackname');
 end

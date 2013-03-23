@@ -21,7 +21,7 @@ else
     toOverWrite=varargin{1};
 end
 
-parfor k=1:length(d)%6Aug12 - parfor added
+for k=1:length(d)
     [dye, stackSuffix, wormFitName, ~,~]=parseStackNames(regexprep(d(k).name,'_SegStacks.mat',''));
     if ~sum(strcmp(dye,{'dapi','trans'}))
         if toOverWrite % Will overwrite all the wormGaussianFit.mat files

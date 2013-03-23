@@ -3,6 +3,7 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %   Name:       traingRFClassifier.m
 %   Version:    2.0, 30th June 2012
 %   Author:     Allison Wu
+%   Command: trainingSet=trainRFClassifier(trainingSet,outputSuffix*)
 %   Description: train and generate a random forest with the training set of size N.
 %       - Needs to load in a trainingSet_{suffix}.mat first.
 %       - You can specify the name of the output training set file by specifying the suffix=varargin{1}.  
@@ -64,6 +65,7 @@ else
         case 1
             suffix=varargin{1};
             ntrees=1000;
+            FBoot=1;
         case 2
             suffix=varargin{1};
             ntrees=varargin{2};
@@ -125,7 +127,7 @@ for n=1:2
         errorCurr=oobError(testRF,'mode','ensemble');
         Improve=1-errorCurr/errorOld;
         k=k+1;
-        oobErrors(k,:)=[mCurr,errorCurr];
+        oobErrors(k,:)=[mCurr,errorCurr]
         if Improve>=improve
             errorOld=errorCurr;
             mBest=mCurr;

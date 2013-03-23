@@ -3,6 +3,7 @@ function [dye, stackSuffix, wormGaussianFitName, segStacksName,spotStatsFileName
 %  Name: parseStackNames.m   %nameMod
 %  Version: 2.0, 4th July 2012
 %  Author: Allison Wu, Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
+%  Command: [dye, stackSuffix, wormGaussianFitName, segStacksName,spotStatsFileName]=parseStackNames(stackName)
 %  Description: 
 %       - Take in a stackName or {dye}_{stackSuffix} , e.g. tmr001.stk, tmr_Pos0.tiff or tmr_Pos0
 %       - generate the segStack, wormGaussianFitNames

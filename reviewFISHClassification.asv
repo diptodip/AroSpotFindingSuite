@@ -46,6 +46,10 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %                       > Add the spot to the training set without changing the classification.
                                %               * Scrollbar under the right image $
 %                       > Change the zoom of the right image.  The number under it displays the current zoom
+%               * Click 'Undo the Last Spot' button:
+%                       > undo the action on the last spot you curated
+%               * Click 'Undo All' button:
+%                       > clear all the unsaved (light blue) spot curation.
 %               * Toggle arrow to spot radio button $
 %                       > There is a little red arrow that points to the current spot in the right image.  This toggles it on and off if it is disturbing you.
 %               * Toggle On=Slice;Off=merge radio button $
@@ -416,11 +420,16 @@ switch button
     case {'Yes'}
         disp('Rerunning randomForest with the latest amendments');
         handles.trainingSet=trainRFClassifier(handles.trainingSet);  %nameMod
+        disp('Redo classification of the spots for this stack...')
+        handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
+        
 end
+pos_size = get(handles.figure1,'Position');
 
-button = questdlg('Do you want to save the training set and updated spot data?','Save?','Yes');
+button = questdlg('Do you want to save the training set and updated spot data when exiting?','Save when exiting?','Yes');
 switch button
     case {'No'}
+        delete(handles.figure1)
     case {'Yes'}
         disp('Saving the training set and updated spot stats....')
         trainingSet=handles.trainingSet;
@@ -428,25 +437,8 @@ switch button
         [~, ~, wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{1}.segStackFile);
         worms=handles.worms;
         save(wormGaussianFitName,'worms');
-        disp('Redo classification of the spots for this stack...')
-        spotStats=classifySpots(handles.worms,handles.trainingSet);
+        spotStats=handles.spotStats;
         save(spotStatsFileName,'spotStats');
-end
-
-
-% Get the current position of the GUI from the handles structure
-% to pass to the modal dialog.
-pos_size = get(handles.figure1,'Position');
-% Call modaldlg with the argument 'Position'.
-user_response = modaldlg('Title','If you are finished shall I close the GUI window?');
-switch user_response
-    case {'No'}
-        % take no action
-    case 'Yes'
-        % Prepare to close GUI application window
-        %                  .
-        %                  .
-        %                  .
         delete(handles.figure1)
 end
 
@@ -987,6 +979,11 @@ if isfield(handles.rectangleHandles{iSpotBeingRemoved_allLocs},'curationLine')
 end
 
 delete(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect);
+if handles.spotStats{handles.iCurrentWorm}.classification(:,3)== 1 % origianlly a good spot
+    set(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+else
+    set(handles.rectangleHandles{iSpotBeingRemoved_allLocs}.rect,'EdgeColor',[1,.5,0]);
+end
 
 handles.nGoodToRejected=sum((handles.spotsCurated(:,5)==1).*(handles.spotsCurated(:,4)==0));
 handles.nRejectedToGood=sum((handles.spotsCurated(:,5)==0).*(handles.spotsCurated(:,4)==1));

@@ -1,7 +1,7 @@
 function spotStatsDataAligning(fileSuffix,varargin)
 %% ========================================================================
 %   Name:       spotStatsDataAligning.m
-%   Version:    2.0, 5th July 2012
+%   Version:    2.1, 5th July 2012
 %   Author:     Allison Wu
 %   Command:    spotStatsDataAligning(fileSuffix,alignDapi*) *Optional Input
 %   Description: aligns spot number estimates and nuclei counts into wormData matrix
@@ -21,6 +21,10 @@ function spotStatsDataAligning(fileSuffix,varargin)
 %   Files generated: 
 %       - wormData_{fileSuffix}.mat,
 %       - wormData_{fileSuffix}_quickPlots.fig if alignDapi==1
+
+%   Updates: 
+%       - 2012 Aug. 8th: add in the field of meanRange to
+%       give a rough idea of how well the spots are classified.
 %% ========================================================================
 
 if isempty(varargin)
@@ -55,13 +59,27 @@ fprintf('There are %d embryos in the dataset.\n', wormCount);
 
 
 disp('Aligning fluorescence data...')
-wormData.spotNum=zeros(wormCount,length(dye)+3+alignDapi);
+wormData.spotNum=-1*ones(wormCount,length(dye)+3+alignDapi);
 wormData.U=zeros(wormCount,length(dye));
 wormData.L=zeros(wormCount,length(dye));
 wormData.spotNum(:,1)=[1:wormCount]';
 
+wormIndex=0;
+for n=1:length(posCount)
+    load(posCount(n).name)
+    stackName=regexprep(posCount(n).name,'_','\.');
+    stackPrefix=regexp(stackName,'\.','split');
+    posNum=stackPrefix{2};
+    posNum=str2num(cell2mat(regexp(posNum,'\d+','match')));
+    wormNum=length(spotStats);
+    for p=1:wormNum
+        wormIndex=wormIndex+1;
+        wormData.spotNum(wormIndex,1:3)=[wormIndex posNum p];
+    end
+end
+
+
 for k=1:length(dye)
-    wormIndex=1;
     posCount=dir([dye{k} '*_spotStats.mat']);
     for j=1:length(posCount)
         load(posCount(j).name)
@@ -70,25 +88,31 @@ for k=1:length(dye)
         posNum=stackPrefix{2};
         posNum=str2num(cell2mat(regexp(posNum,'\d+','match')));
         fprintf('Aligning data at position %d ...\n', posNum)
+        
         for i=1:length(spotStats)
+            [~,~,wormIndex]=intersect([posNum i],wormData.spotNum(:,2:3),'rows');
             if strcmp(dye{k},stackPrefix{1})
-                wormData.spotNum(wormIndex,1:3)=[wormIndex posNum i];
+                if spotStats{i}.SpotNumEstimate>1000
+                    disp(posCount(j).name)
+                end
                 wormData.spotNum(wormIndex,3+k)=spotStats{i}.SpotNumEstimate;
                 wormData.U(wormIndex,k)=abs(spotStats{i}.SpotNumRange(2)-spotStats{i}.SpotNumEstimate);
                 wormData.L(wormIndex,k)=abs(spotStats{i}.SpotNumRange(1)-spotStats{i}.SpotNumEstimate);
             end
-            wormIndex=wormIndex+1;
             
         end
     end
 end
 
+wormData.meanRange=mean(wormData.U+wormData.L);
+
 if alignDapi
     disp('Find nuclei number data...')
     % old stk embryoDataStructure format?
     l=dir('**_embryoDataStructure**.mat');
+    curatedNuclei=dir('curated_newNucallembryos**.mat');
     nuclei=dir('newNucallembryos_**.mat');
-    wData=dir('wormData**.mat');
+    wData=dir('wormData.mat');
     if ~isempty(l)
         load(l.name)
         wormData.spotNum(:,end)=out.dapis';
@@ -104,16 +128,27 @@ if alignDapi
             load(nuclei(n).name)
             for j=1:length(allembryos)
                 [~,~,wormIndex]=intersect([posNum,j],wormData.spotNum(:,2:3),'rows');
-                if isfield(allembryos{j}.dapistr, 'pts')
-                    wormData.spotNum(wormIndex,end)=length(allembryos{j}.dapistr.pts);
-                else
-                    wormData.spotNum(wormIndex,end)=0;
+                if isfield(allembryos{j}.dapistr, 'pts') 
+                    if ~isempty(allembryos{j}.dapistr.pts)
+                        wormData.spotNum(wormIndex,end)=length(allembryos{j}.dapistr.pts);
+                    end
                 end
                 
             end
             
         end
+    elseif ~isempty(wData)
+        wormDataOld=load(wData.name);
+        wormDataOld=wormDataOld.wormData;
+        
+        for n=1:length(wormDataOld)
+            [~,wormIndex,wormIndexOld]=intersect(wormData.spotNum(:,2:3),wormDataOld(n,2:3),'rows');
+            wormData.spotNum(wormIndex,end)=wormDataOld(n,end);
+        end
+        
     end
+    
+    
     
     % Plot womrData by dye
     color={'b','g','m'};

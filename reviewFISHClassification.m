@@ -1,12 +1,12 @@
 function varargout = reviewFISHClassification(varargin)  %nameMod
 
 %% =============================================================
-%   Name:    reviewFISHClassification.m   
-%   Version: 2.1, 10th July 2012    
-%   Authors:  Allison Wu, Scott Rifkin 
+%   Name:    reviewFISHClassification.m
+%   Version: 2.1, 10th July 2012
+%   Authors:  Allison Wu, Scott Rifkin
 %   Command:  reviewFISHClassification(stackName*) *Optional Input
 %   Description: reviewFISHClassification.m is a gui to browse the results of the spot finding algorithm, estimate and/or correct errors, and retraing the classifier if specified.
-%       -  Input Argument: 
+%       -  Input Argument:
 %               * stackName, or {dye}_{stackSuffix} pair e.g. tmr_Pos1.tif, tmr001.stk, tmr_001, tmr_Pos1
 %               * If absent, it will ask you for the stackName.
 %       - The program brings up 4 image panes and several buttons:
@@ -14,7 +14,7 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %               * The big one on the right has the zoomable image centered around the potential spot.
 %               * Two smaller ones on the bottom left have zooms of the region around a spot with the raw data and a laplace filtered image of the same region.
 %               * The 7x7 spot context (along with neighboring slices) is shown in the middle (3D intensity histograms).
-%               * In the left image pane: 
+%               * In the left image pane:
 %                       > Maxima that are classified as spots are bordered by blue.
 %                       > Maxima that are rejected as spots are bordered in yellow.
 %                       > Maxima that are in the training set have a cross on them.
@@ -44,7 +44,7 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %                       > If you're on a good spot: this spot will be curated to a bad spot but it will not be added to the training set. (With a single light blue slash)
 %               * Click 'Add to training set' button
 %                       > Add the spot to the training set without changing the classification.
-                               %               * Scrollbar under the right image $
+%               * Scrollbar under the right image $
 %                       > Change the zoom of the right image.  The number under it displays the current zoom
 %               * Click 'Undo the Last Spot' button:
 %                       > undo the action on the last spot you curated
@@ -64,8 +64,9 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %   Files required: the corresponding **_segStacks.mat, **_wormGaussianFit.mat, trainingSet_**.mat, **_spotStats.mat
 %   Files generated: overwrites all the files mentioned above except for **_segStacks.mat
 %
-%   Updates: 
+%   Updates:
 %       - 2012 Aug 13th, small bug fixes
+%       - 2013 Mar 19th, small bug fixes
 %   Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
 %   License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
@@ -243,7 +244,7 @@ set(data.nGoodToRejected_txt,'String',[num2str(data.nGoodToRejected) ' good -> r
 set(data.nRejectedToGood_txt,'String',[num2str(data.nRejectedToGood) ' rejected -> good']);
 set(data.nGoodSpots_txt,'String',[num2str(sum(data.allLocs(:,5))) ' good spots']);
 set(data.nRejectedSpots_txt,'String',[num2str(sum(data.allLocs(:,5)~=1)) ' rejected spots']);
-set(data.iCurrentWorm_txt,'String',['Worm: ' num2str(data.iCurrentWorm) ' of ' num2str(size(data.worms,2))]);
+set(data.iCurrentWorm_txt,'String',['Worm: ' num2str(data.iCurrentWorm) ' of ' num2str(length(data.worms))]);
 set(data.RandomForestResult_txt,'String',['Probability Estimate: ' num2str(data.allLocs(data.iCurrentSpot_allLocs,7)*100) '%,  IQR : ' num2str(data.allLocs(data.iCurrentSpot_allLocs,end))]);
 set(data.scdValue_txt,'String',['scd: ' num2str(data.worms{data.iCurrentWorm}.spotDataVectors.scd(data.iCurrentSpot_worms))]);
 
@@ -346,7 +347,7 @@ set(data.figure_handle,'CurrentAxes',data.spotZoomLaplaceFiltered);
 % rc=imregionalmax(currentSlice);
 % data.spotZoomRaw=imshow(cat(3,.75*imscale(currentSlice,99.995)+imscale(currentSlice,99.995).*rc,imscale(currentSlice,99.995),imscale(currentSlice,99.995)));
 %%%%
-data.spotZoomLaplaceFiltered=imshow(imscale(data.laplaceWorm{data.iCurrentWorm}(:,:,currentZ),99.995));
+%data.spotZoomLaplaceFiltered=imshow(imscale(data.laplaceWorm{data.iCurrentWorm}(:,:,currentZ),99.995));
 zoomFactorX=origWidth/data.spotSize(2);
 zoomFactorY=origHeight/data.spotSize(1);
 zoomFactor=max(zoomFactorX,zoomFactorY);
@@ -418,20 +419,23 @@ disp('Spot fixing done.  Saving changes');
 button = questdlg('Do you want to re-train the classifier now?','Re-train?','No');
 switch button
     case {'No'}
-
-    case {'Yes'}
-        disp('Rerunning randomForest with the latest amendments');
-        handles.trainingSet=trainRFClassifier(handles.trainingSet);  %nameMod
-        disp('Redo classification of the spots for this stack...')
-        handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
         
-end
-pos_size = get(handles.figure1,'Position');
-
-button = questdlg('Do you want to save the training set and updated spot data when exiting?','Save when exiting?','Yes');
-switch button
-    case {'No'}
-        delete(handles.figure1)
+        button = questdlg('Do you want to save the training set and updated spot data when exiting?','Save when exiting?','Yes');
+        switch button
+            case {'No'}
+                delete(handles.figure1)
+            case {'Yes'}
+                disp('Saving the training set and updated spot stats....')
+                trainingSet=handles.trainingSet;
+                save(handles.trainingSet.FileName,'trainingSet');
+                [~, ~, wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{1}.segStackFile);
+                worms=handles.worms;
+                save(wormGaussianFitName,'worms');
+                spotStats=handles.spotStats;
+                save(spotStatsFileName,'spotStats');
+                delete(handles.figure1)
+        end
+        
     case {'Yes'}
         disp('Saving the training set and updated spot stats....')
         trainingSet=handles.trainingSet;
@@ -442,7 +446,14 @@ switch button
         spotStats=handles.spotStats;
         save(spotStatsFileName,'spotStats');
         delete(handles.figure1)
+        disp('Rerunning randomForest with the latest amendments');
+        handles.trainingSet=trainRFClassifier(handles.trainingSet);  %nameMod
+        disp('Redo classification of the spots for this stack...')
+        handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
+        
 end
+%pos_size = get(handles.figure1,'Position');
+
 
 
 
@@ -483,7 +494,7 @@ function goodSpot_button_Callback(hObject, eventdata, handles)
 currentSpotClassification=handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,:);
 handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,3)=1;
 handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,1)=1;
-handles.allLocs(handles.iCurrentSpot_allLocs,4)=1;  
+handles.allLocs(handles.iCurrentSpot_allLocs,4)=1;
 handles.allLocs(handles.iCurrentSpot_allLocs,5)=1;
 rectposition=get(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'Position');
 newSpotRow=[handles.posNum handles.iCurrentWorm handles.iCurrentSpot_worms 1];
@@ -502,11 +513,11 @@ if currentSpotClassification(3)~=1
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
             handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
-            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);       
-
+            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+            
         end
-              
-    end      
+        
+    end
     
 else % It is already a good spot. Add to training set.
     disp('This spot is already classified as good spot.  Adding this spot into the training set....')
@@ -514,12 +525,12 @@ else % It is already a good spot. Add to training set.
     
     handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
     disp('This spot is added into the training set.')
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);       
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
 end
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
-    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
-    handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
-    handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
+handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
+handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
 %setfocus(handles.spotResults);
 %uicontrol(gcbf);
 set(handles.arrowSpot_button,'Value',1)
@@ -553,24 +564,24 @@ if currentSpotClassification(3)~=0
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
             handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
-            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);       
-
+            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+            
         end
-      
-    end      
-
+        
+    end
+    
 else % It is already a bad spot. Add to training set.
     disp('This spot is already classified as bad spot.  Adding this spot into the training set....')
     handles.allLocs(handles.iCurrentSpot_allLocs,4)=0;
     handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
     disp('This spot is added into the training set.')
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);       
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
 end
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
-    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
-    handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
-    handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
-    
+handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
+handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
+
 %setfocus(handles.spotResults);
 %uicontrol(gcbf);
 set(handles.arrowSpot_button,'Value',1);
@@ -607,7 +618,7 @@ function done_button_Callback(hObject, eventdata, handles)
 
 handles.spotStats{handles.iCurrentWorm}.spotsFixed=1;
 handles.spotStats{handles.iCurrentWorm}=updateSpotStats(handles.spotStats{handles.iCurrentWorm});
-if handles.iCurrentWorm<size(handles.worms,2)
+if handles.iCurrentWorm<length(handles.worms)
     handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
     while ~handles.worms{handles.iCurrentWorm}.goodWorm%if the worm is bad
         handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
@@ -843,7 +854,7 @@ newSpotRow=[spotIndex currentSpotClassification(3)];
 handles.spotsCurated=[handles.spotsCurated;[newSpotRow currentSpotClassification(3)]];
 handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
 rectposition=get(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'Position');
-handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);       
+handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
 handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
 
 set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
@@ -930,7 +941,7 @@ spotStats=handles.spotStats;
 save(spotStatsFileName,'spotStats');
 disp('Data saved.')
 set(handles.arrowSpot_button,'Value',1)
-handles=drawTheLeftPlane(handles); 
+handles=drawTheLeftPlane(handles);
 guidata(hObject,handles);
 displayImFull(hObject,handles,0);
 
