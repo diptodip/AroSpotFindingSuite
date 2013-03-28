@@ -73,13 +73,13 @@ for i=1:length(stacks)
     if sum(strcmpi(dye,dyeToDo))~=0
         if toOverWrite
             fprintf('Doing %...\n', stacks(i).name)
-            spotStats=classifySpots(worms,trainingSet);
+            classifySpots(worms,trainingSet);
         else
             if exist(spotStatsFileName,'file')
                 fprintf('%s is already done.\n', stacks(i).name)
             else
                 fprintf('Doing %...\n', stacks(i).name)
-                spotStats=classifySpots(worms,trainingSet);
+                classifySpots(worms,trainingSet);
             end
         end
     end
