@@ -2,7 +2,6 @@ function tiff = readmm(infile,varargin)
 %  =============================================================
 %  Name: readmm.m   %nameMod
 %  Author:  Arjun Raj
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
 %  =============================================================
 % Reads MM stk files.  Use readmm('blah',3:34) to load just images 3 to 34, etc.
 

@@ -1,7 +1,7 @@
 function spotStats=classifySpots(worms,varargin)
 %% ========================================================================
 %   Name:       classifySpots.m
-%   Version:    2.0, 5th July 2012
+%   Version:    2.5, 25th Apr. 2013
 %   Author:     Allison Wu
 %   Command:    spotStats=classifySpots(worms,trainingSet*) *Optional Input
 %   Description: classify the spots using the trained classifier
@@ -13,27 +13,32 @@ function spotStats=classifySpots(worms,varargin)
 %         of the files.
 %         After the trainingSet.mat file is specified, it will find the
 %         related RF.mat file.
-%       - spotStats=classifySpots(worms,trainingSet) 
-%         It specifies a particular training set and its related trained 
-%         Random Forest to use.  You need to load in the trainingSet 
-%         stucture variable first.  
-%       - All the statistics for the spots within each worm is saved in the 
+%       - spotStats=classifySpots(worms,trainingSet)
+%         It specifies a particular training set and its related trained
+%         Random Forest to use.  You need to load in the trainingSet
+%         stucture variable first.
+%       - All the statistics for the spots within each worm is saved in the
 %         spotStats.mat file. (All the fields are the same as in the trainingSet.)
-%       - spotStats{}.classification is a spotNumber*3 matrix which saves [manual, auto, final] classification:
+%       - spotStats{}.classification is a spotNumber-by-3 matrix which saves [manual, auto, final] classification:
 %               * Manual classification (0, bad spots; 1, good spots; -1, not manually curated)
 %               * Auto classification by random forest
-%               * Final classification: auto
-%       classification
+%               * Final classification: auto classification curated by manual classification
+%       - spotStats{}.locAndClass is a spotNumber-by-4 double matrix with the first three columns specifying the 
+%         x-y-z coordinates of each spot and the last column indicating the final classification of each spot. 
 %
-%       
-%   Files required: 
+%   Files required:
 %       - 'worms' loaded from {dye}_{posNum}_wormGaussianFit.mat,
 %       - trainingSet_**.mat, **_RF.mat
-%   Files generated: {dye}_{stackSuffix}_spotStats.mat    
-%   
+%   Files generated: {dye}_{stackSuffix}_spotStats.mat
+%
+%   Updates:
+%       - add in version check to detect older version.  If detected, new
+%       stats will be calculated and added.
+%       - update the way of spot number estimation.
+%       - add in the field with location and final classification together.
 %% ========================================================================
 if ~isempty(worms)
-
+    
     % Find the dye and posNumber.
     segStackName=worms{1}.segStackFile;
     prefix=regexprep(segStackName,'_SegStacks.mat','');
@@ -54,8 +59,8 @@ if ~isempty(worms)
     % Load in the compact random forests.
     disp('Load in the random forests...')
     if ~isempty(varargin)&&~isempty(varargin{1})
-        fprintf('Using trained classifier linked to %s \n', trainingSet.FileName)
         trainingSet=varargin{1};
+        fprintf('Using trained classifier linked to %s \n', trainingSet.FileName)
         load(trainingSet.RF.RFfileName);
     else
         t=dir(['trainingSet_' dye '**.mat']);
@@ -79,9 +84,16 @@ if ~isempty(worms)
     end
     
     statsToUse=trainingSet.RF.statsUsed;
+    % Version check
+    if ~strcmp('v2.5',worms{1}.version)
+        display('Detect an older version. Update the wormGaussianFit with new stats.')
+        worms=addStatsToWormGaussian(worms);
+    end
+    
     
     for wi=1:wormNum
         tic
+        
         fprintf('Doing worm %d ...\n',wi)
         spotNum=length(worms{wi}.spotDataVectors.rawValue);
         allDataCenter=repmat(trainingSet.allDataCenter,[spotNum,1]);
@@ -104,7 +116,7 @@ if ~isempty(worms)
         for n=1:length(Trees)
             [~,nodes]=eval(Trees{n},dataMatrix);
             ClassProbs=classprob(Trees{n},nodes);
-             spotTreeProbs(:,n)=ClassProbs(:,2);
+            spotTreeProbs(:,n)=ClassProbs(:,2);
         end
         
         spotStats{wi}.spotTreeProbs=spotTreeProbs;
@@ -112,23 +124,25 @@ if ~isempty(worms)
         IQR=iqr(spotTreeProbs,2);
         IQRt=trainingSet.RF.IQRthreshold;
         spotStats{wi}.ProbEstimates=Probs;
-        %spotStats{wi}.wSpotTreeProbs=wSpotTreeProbs;
-        spotStats{wi}.SpotNumEstimate=sum(Probs(IQR<IQRt)>0.5)+sum(Probs(IQR>IQRt));
-        randSpotNum=binornd(1,spotTreeProbs(IQR>IQRt,:),size(spotTreeProbs(IQR>IQRt,:)));
-        range=quantile(sum(randSpotNum,1),trainingSet.RF.quantileRange);
-        spotStats{wi}.SpotNumRange=sum(Probs(IQR<IQRt)>0.5)+range;
-        spotStats{wi}.quantileRange=trainingSet.RF.quantileRange;
+        
+        [g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
+  
+        ub=sum(Probs>0.5)+b2g;
+        lb=sum(Probs>0.5)-g2b;
+        spotStats{wi}.SpotNumRange=[lb ub];
+        
+        spotStats{wi}.SpotNumEstimate=sum(Probs>0.5);
+        spotStats{wi}.quantile=trainingSet.RF.quantile;
         spotStats{wi}.Margin=abs(Probs*2-1);
         spotStats{wi}.IQR=IQR;
-        spotStats{wi}.ProbEstimates=Probs;
         spotStats{wi}.UnreliablePortion=mean(IQR>IQRt);
-
+        
         %spotStats{wi}.classification=[manual,auto,final]
-        spotStats{wi}.classification=zeros(spotNum,3); 
+        spotStats{wi}.classification=zeros(spotNum,3);
         spotStats{wi}.classification(:,1)=-1; % won't be -1 if manually corrected.
         spotStats{wi}.classification(:,2)=Probs>0.5;
         
-                
+        
         % Check if the spot is already in the training set.
         disp('Check if the spot is already in the training set...')
         spotInfo=[ones(spotNum,1)*posNumber ones(spotNum,1)*wi worms{wi}.spotDataVectors.spotInfoNumberInWorm];
@@ -150,14 +164,17 @@ if ~isempty(worms)
             fprintf('%d spots out of  %d manually curated spots were classified incorrectly.\n', sum(index),sum(manualIndex))
             spotStats{wi}.msg=[ num2str(sum(index)) ' spots out of ' num2str(sum(manualIndex))  ' manually curated spots were classified incorrectly.'];
         end
-        %spotStats{wi}.spotNumFinal=spotStats{wi}.SpotNumEstimate-;      
+        %spotStats{wi}.spotNumFinal=spotStats{wi}.SpotNumEstimate-;
         toc
-    spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
+        spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
+        
+        spotStats{wi}.locAndClass=[worms{wi}.spotDataVectors.locationStack spotStats{wi}.classification(:,3)];
     end
     
     spotStatsName=[dye '_Pos' num2str(posNumber) '_spotStats.mat'];
-    save(spotStatsName,'spotStats')
+    save(fullfile(pwd,spotStatsName),'spotStats')
 else
     disp('This stack is bad. Skip spot classification.')
+    spotStats={};
 end
 end

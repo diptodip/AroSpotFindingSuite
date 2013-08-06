@@ -11,6 +11,12 @@ function doEvalFISHStacksForAll(varargin)
 %       - toOverWrite=1, it will not detect the existence of
 %       wormGaussianFit.mat files and therefore, overwrites all the
 %       wormGausianFit.mat files that exist.
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
 %% ========================================================================
 
 d=dir('**_SegStacks.mat')

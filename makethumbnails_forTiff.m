@@ -1,4 +1,17 @@
-% makethumbnails.m
+%% ========================================================================
+%   Name:       makeThumbNails_forTiff.m
+%   Version:    2.0, 5th July 2012
+%   Author:     Allison Wu
+%   Command:    makeThumbNails_forTiff
+%   Description: make thumbnails from tif stacks.
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
+%% ========================================================================
+% makethumbnails_forTiff.m
 % 2011/5/24 made to apply on .tif files
 % This program goes through all the stacks in a directory and generates a composite image that is useful for a quick overview.
  

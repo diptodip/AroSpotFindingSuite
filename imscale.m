@@ -6,10 +6,12 @@ function [im] = imscale(im1,varargin)
 %  Command:  [im] = imscale(im1,prtile*,excludeZeros*)
 %  Description:scale the images
 %       
-%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
 %  =============================================================
 %This is a utility function to scale an image
 %varargin is percentile...if it is present, then scale not to max but to

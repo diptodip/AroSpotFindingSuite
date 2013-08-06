@@ -3,10 +3,12 @@ function newLocation = translateToNewCoordinates(oldLocation,subImagePosition,di
 %  Name: translateToNewCoordinates.m
 %  Version: 1.0, 24 March 2010
 %  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
-%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu 
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
 %  =============================================================
 %takes a location in a larger image and makes new location relative to
 %subImage position  note that subImagePosition will come in as a position

@@ -2,13 +2,13 @@ function evaluateFISHImageStackBeta(stackSuffix,toWrite,varargin)  %nameMod
 %  =============================================================
 %  Name: evaluateFISHImageStack.m          %nameMod
 %  Version: 1.5, 24 Apr 2012     %nameMod
-%  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
-%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%  Website:
-%  http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
-%  =============================================================
+%  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
+%%  =============================================================
 % [worms]= evaluateFISHImageStack(stackName,toWrite,varargin)  %nameMod
 % toWrite is flag [0,1] to
 % tell to write or not (if doing batch immediately followed by processing

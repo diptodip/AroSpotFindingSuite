@@ -20,13 +20,14 @@ switch nargin
     startPlane=varargin{1};
     endPlane=varargin{2};
 
-end
+end;
+
 err=[];
 if isempty(endPlane)
     k=1;
     while isempty(err)
         try
-            stack(:,:,k)=imread(fileName,startPlane+k-1);
+            stack(:,:,k)=readtiff(fileName,startPlane+k-1);
             k=k+1;
         catch err
             if strcmp(err.identifier, 'MATLAB:rtifc:invalidDirIndex')
@@ -39,7 +40,7 @@ if isempty(endPlane)
     
 else
     for k=1:(endPlane-startPlane+1)
-        stack(:,:,k)=imread(fileName,startPlane+k-1);
+        stack(:,:,k)=readtiff(fileName,startPlane+k-1);
     end
 end
 
