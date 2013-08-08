@@ -12,7 +12,8 @@ function [g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,quantile)
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
 %
-%% ========================================================================unreliableSpots=Probs(IQR>IQRt);
+%% ========================================================================
+unreliableSpots=Probs(IQR>IQRt);
 unreliableGoodSpots=unreliableSpots(unreliableSpots>0.5);
 unreliableBadSpots=unreliableSpots(unreliableSpots<0.5);
 if ~isempty(unreliableGoodSpots)
