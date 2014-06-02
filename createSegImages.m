@@ -94,9 +94,9 @@ for i=1:length(stacks)
                 end
             elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
                 if exist([dye{di} '_' stackSuffix '.tif'],'file')
-                    stack=double(readTiffStack([dye{di} '_' stackSuffix '.tif']));
+                    stack=double(tiffLoaderPureMatlab([dye{di} '_' stackSuffix '.tif']));
                 elseif exist([dye{di} '__' stackSuffix '.tif'],'file')
-                    stack=readTiffStack([dye{di} '__' stackSuffix '.tif']);
+                    stack=tiffLoaderPureMatlab([dye{di} '__' stackSuffix '.tif']);
                 else
                     fprintf('Failed to find the file %s .', [dye{di} '_' stackSuffix '.tif'])
                 end

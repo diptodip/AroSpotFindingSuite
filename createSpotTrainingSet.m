@@ -1,7 +1,7 @@
 function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %% ========================================================================
 %   Name: createSpotTrainingSet
-%   Version: 2.0 4th July 2012
+%   Version: 2.5 25th Apr. 2013
 %   Author: Allison Wu
 %   Command:
 %   trainingSet=createSpotTrainingSet(stackName,probeName,appendTrainingSet*)
@@ -18,6 +18,9 @@ function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %
 %   Files required:     {dye}_{stackSuffix}_SegStacks.mat,  {dye}_{stackSuffix}_wormGaussianFit.mat
 %   Files generated:    trainingSet_{dye}_{probeName}.mat.
+%   Updates:
+%       - Built-in version check to make sure the new stats are added.
+%       
 %% ========================================================================
 
 [dye, stackSuffix, wormGaussianFitName, segStacksName,~]=parseStackNames(stackName);
@@ -51,6 +54,11 @@ posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
 
 disp('Load in spots information...')
 load(wormGaussianFitName);
+% Version check
+if ~strcmp('v2.5',worms{1}.version)
+    display('Detect an older version. Update the wormGaussianFit with new stats.')
+    worms=addStatsToWormGaussian(worms);
+end
 wormNum=size(worms);
 stackH=worms{1}.numberOfPlanes;
 w=[1:wormNum];
@@ -131,11 +139,16 @@ for i=1:5
 end
 
 % Stores a dataMatrix ready for Matlab random forest.
-statsToUse = {'intensity';'rawIntensity';'totalHeight';'sigmax';'sigmay';'estimatedFloor';'scnmse';'scnrmse';'scr';'scd';'sce';
-    'prctile_50';    'prctile_60'  ;  'prctile_70'  ;  'prctile_80'  ; 'prctile_90';
-    'fraction_center';    'fraction_plusSign'  ;  'fraction_3box'  ;  'fraction_5star'  ;  'fraction_5box';    'fraction_7star' ; 'fraction_3ring';
-    'raw_center';    'raw_plusSign'  ;  'raw_3box'  ;  'raw_5star'  ;  'raw_5box';    'raw_7star' ; 'raw_3ring';
-    'total_area';'sv1';'sv2';'sv3';'sv4';'sv5'};
+statsToUse = {'intensity';'totalHeight';'estimatedFloor';'scnmse';'scnrmse';'scr';'scd';'sce';...
+    'prctile_50';'prctile_60';'prctile_70';'prctile_80';'prctile_90';...
+    'fraction_center';'fraction_plusSign';'fraction_3box';'fraction_5star';'fraction_5box';'fraction_7star';'fraction_3ring';...
+    'raw_center';'raw_plusSign';'raw_3box';'raw_5star';'raw_5box';'raw_7star';'raw_3ring';'total_area';...
+    'sv1';'sv2';'sv3';'sv4';'sv5';...
+    'absDeltaPlusSign';'deltaPlusSign';'absPlusSignDelta';'plusSignPvalue';...
+    'absDeltaStarSign';'deltaStarSign';'absStarSignDelta';'starSignPvalue';...
+    'absDeltaCenterBox';'deltaCenterBox';'absCenterBoxDelta';'centerBoxPvalue';'ratioSigmaXY';...
+    'totalAreaRandPvalue';'cumSumPrctile90RP';'cumSumPrctile70RP';'cumSumPrctile50RP';'cumSumPrctile30RP';...
+    'cumSumPrctile90';'cumSumPrctile70';'cumSumPrctile50';'cumSumPrctile30'};
 
 trainingSet.statsUsed=statsToUse;
 
@@ -152,7 +165,7 @@ trainingSet.dataMatrix.Y=trainingSet.spotInfo(:,end);
 
 % Append new training set to exisiting training set if necessary.
 if appendTrainingSet==0
-    trainingSet.version= 'ver. 2.0';
+    trainingSet.version= 'ver. 2.5, new stats added';
     trainingSet.appended=0;             % 0, if it's a newly created training set. 1, if it's a training set that had been appended with new spots.
     disp('Saving the training set...')
     save(fullfile(pwd,trainingSetName),'trainingSet')
@@ -161,6 +174,11 @@ elseif appendTrainingSet==1
     disp('Append new spot information and stats to existing training set...')
     trainingSetToAppend=trainingSet;
     load(trainingSetName)
+    % Check if new stats are added.
+    if ~strcmp('ver. 2.5, new stats added',trainingSet.version)
+        display('Detect an older version. Update the trainingSet with new stats.')
+        trainingSet=addStatsToTrainingSet(trainingSet,1);
+    end
     trainingSet.appended=1;
     % Find spots that were not in the training set.
     a=trainingSetToAppend.spotInfo(:,1:3);
