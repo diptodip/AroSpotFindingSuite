@@ -650,6 +650,22 @@ pt = get(data.zoom128,'currentpoint');
 newC=xToCol(pt(1,1));
 newR=yToRow(pt(1,2));
 
+%%%%%%%%%%%%%%%%%%%%%
+% 1 July 14
+% If this is too close to the edge it will throw an error when trying to
+% figure out where the zoom16 image should be.  Protect it from that
+%newR and newC should be the upper left corner
+disp('newR, newC');
+disp([newR, newC]);
+disp(data.dataStructure.origSize([2 1]));
+disp(newR-floor(c16H/2));
+newC=max(1,min(newC-floor(c16W/2),data.dataStructure.origSize(2)-c16W+1));
+newR=max(1,min(newR-floor(c16H/2),data.dataStructure.origSize(1)-c16H+1));
+disp([newR, newC]);
+disp(pt(1,:));
+
+%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%% I don't know why this is in here.
 % [spotR,spotC]=find(data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)>0);
@@ -685,10 +701,12 @@ c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
 
+disp('c16R c16R+c16H-1 c16C c16C+c16W-1 size(data.blueSlice)');
+disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(data.blueSlice)]);
 
 
-data.currentZoom128_x=min(colToX(data.dataStructure.origSize(1))-c128W+1,max(.5,c16X-c128W/2));
-data.currentZoom128_y=min(rowToY(data.dataStructure.origSize(2))-c128H+1,max(.5,c16Y-c128H/2));
+data.currentZoom128_x=min(colToX(data.dataStructure.origSize(2))-c128W+1,max(.5,c16X-c128W/2));
+data.currentZoom128_y=min(rowToY(data.dataStructure.origSize(1))-c128H+1,max(.5,c16Y-c128H/2));
 regionalMaxes16=data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
 data.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
 set(data.nSpots_txt,'String',[num2str(data.currentZoom16_nSpots) ' spots in view']);
@@ -951,6 +969,8 @@ c16R=yToRow(c16Y);
 c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
+disp('c16R c16H c16C c16W size(blueSlice)');
+disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
 
 regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
 handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
@@ -1174,6 +1194,8 @@ if handles.currentZ<handles.dataStructure.origSize(3)
     
     c16R=yToRow(c16Y);
     c16C=xToCol(c16X);
+disp('c16R c16H c16C c16W size(blueSlice)');
+disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
     
     %now redo regional max stuffb
     regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
@@ -1252,7 +1274,8 @@ c16R=yToRow(c16Y);
 c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
-
+disp('c16R c16H c16C c16W size(blueSlice)');
+disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
 %now redo regional max stuff
 regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
 handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
@@ -1290,9 +1313,13 @@ iCurrentSpot=handles.iCurrentSpot;
 scaledValues=handles.sortedSpotData.scaledValues;
 sliceSortedSpotData=handles.sliceSortedSpotData;
 
+% 1June14.  Need to add nRows in image, nCols in image in call to
+% goToBlueSpotRank
+imSize=size(handles.blueSlice);
+
 
 %fprintf('Moving zoom16\n');
-[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
+[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
 
 while c16X>10000 %this means it is the next slice
     while 1%are there blueSpots in slice
@@ -1323,7 +1350,7 @@ while c16X>10000 %this means it is the next slice
             %check to make sure that iCurrentSpot is not beyond the
             %blueSpotRankList
             iCurrentSpot=min(iCurrentSpot,length(blueSpotRankList));
-            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
+            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
             break
         end;
     end;
@@ -1453,7 +1480,7 @@ end;%while
 %%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W)
+function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,nRowsInImage,nColsInImage)
 %after I have looked at each blueSpot, I delete it from blueSpots (in the
 %Next callbacks (accept/reject).  so go to next slice (i.e. newSpot=0) if
 %size(blueSpots,1)==0
@@ -1479,9 +1506,20 @@ else
     %     end;
     %    newSpotRankIndex=find(blueSpotRankList==newSpotRank,1,'first');
     
-    
-    c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
-    c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % 1June2014
+    % SAR was getting error when the blue spot was too close to the edge.
+    % modified so that it centers at least 8 away from the edges.
+    % however, this requires also passing in the size of the image.
+    % so will have to modify calls to it
+    %c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
+    %c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
+    c16X=colToX(max(1,min(blueSpots(iCurrentSpot,2)-floor(c16W/2),nColsInImage-c16W+1)));
+    c16Y=rowToY(max(1,min(blueSpots(iCurrentSpot,1)-floor(c16H/2),nRowsInImage-c16H+1)));
+    disp(blueSpots(iCurrentSpot,:));
+    disp([c16X,c16Y]);
+    disp([nRowsInImage,nColsInImage,c16W,c16H]);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end;
 
@@ -1528,6 +1566,8 @@ newSpots=getZoom16Spots(c16R,c16H,c16C,c16W,handles.blueSlice,handles.currentZ);
 %remove from blueSpots
 [handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot]=removeZoom16SpotsFromBlueSpotsAndUpdateCurrentSpotIndex(newSpots,handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot);
 
+disp('c16R c16H c16C c16W size(blueSlice)');
+disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
 
 %erase from blueSlice - why erase from blueSlice? - so don't go back to it
 handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)=zeros(c16H,c16W);
