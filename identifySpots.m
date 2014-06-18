@@ -1,15 +1,22 @@
 function varargout = identifySpots(varargin)     %nameMod
 %  Modified by Allison Wu, 2012 May
 %   - Work with the new data format.
+
 %  =============================================================
 %  Name: identifySpots.m        %nameMod
-%  Version: 1.4.2, 18 Oct 2011         %nameMod
-%  Author: Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
+%  Version: 2.5.1, 20 May 2013         %nameMod
+%  Author: Allison Wu & Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
 %  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
 %  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
 %  =============================================================
+%  Updates:
+%       2013 Apr. 29th: bug fixes for the zoom128 moving frame problem and
+%       max merge image.
+%       2013 May 20th: fixed bugs caused by including 'Edge Spots';
+%       2013 May 22nd: Fixed max-merged image problem.
+%
 %IDENTIFYSPOTS M-file for identifySpots.fig
 %      IDENTIFYSPOTS, by itself, creates a new IDENTIFYSPOTS or raises the existing
 %      singleton*.
@@ -290,7 +297,9 @@ else
 end
 
 h=size(dataStructure.scaledStack,3);
-dataStructure.fullImage=max(dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3);
+%dataStructure.fullImage=imscale(max(dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3));
+
+dataStructure.fullImage=max(dataStructure.scaledStack(:,:,max(handles.currentZ-1,1):min(handles.currentZ+1,h)),[],3);
 
 handles.lastHandles={};
 handles.rollbackDepth=6;
@@ -300,7 +309,7 @@ dataStructure.rejectedSpots=[];
 dataStructure.bkgdSpots=[];
 
 handles.dataStructure=dataStructure;
-handles.dataStructure.origSize=[size(dataStructure.segMasks) handles.worms{1}.numberOfPlanes];%size(handles.dataStructure.scaledStack);
+handles.dataStructure.origSize=[size(dataStructure.segMasks) handles.worms{dataStructure.wi}.numberOfPlanes];%size(handles.dataStructure.scaledStack);
 %x=1,y=1 is NW,  x runs W-E, y runs N-S
 
 zoom128Size=512;
@@ -354,7 +363,8 @@ c128C=xToCol(c128X);
 %%%%%%%%%%%%%%%%%
 
 [c16X,c16Y,c16R,c16C,handles.blueSlice,handles.confirmedSlice,handles.currentZ,didTopSlice,handles.blueSpots,handles.iCurrentSpot,handles.blueSpotRankList,handles.bkgd,handles.sortedSpotData.scaledValues,handles.sliceSortedSpotData,handles.dataStructure.scaledSlice]=moveZoom16(c16X,c16Y,c16W,c16H,c128X,c128Y,c128W,c128H,handles);
-regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+[regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+regionalMaxes16=handles.blueSlice(NR16:SR16,WC16:EC16);
 
 handles.currentZoom16_x=c16X;
 handles.currentZoom16_y=c16Y;
@@ -363,7 +373,11 @@ handles.currentZoom16_y=c16Y;
 %always try to keep zoom16 in the middle of zoom128
 %but if at the edge, still do a full square
 handles.currentZoom128_x=min(colToX(handles.dataStructure.origSize(1))-c128W+1,max(.5,c16X-c128W/2));
+display(handles.currentZoom128_x)
+display(colToX(handles.dataStructure.origSize(1))-c128W+1)
+display(max(.5,c16X-c128W/2))
 handles.currentZoom128_y=min(rowToY(handles.dataStructure.origSize(2))-c128H+1,max(.5,c16Y-c128H/2));
+display(handles.currentZoom128_y)
 %%%%%%%%%%%%%%%%%%%%%%%
 
 %this is the function that will record the center of the spot
@@ -584,7 +598,8 @@ if data.blueSlice(pixelToChange_r,pixelToChange_c)
             c16C=xToCol(c16X);
             
             %now redo regional max stuff
-            regionalMaxes16=data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+            [regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(data.blueSlice,c16R, c16C,c16H,c16W);
+            
             data.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
             set(data.nSpots_txt,'String',[num2str(data.currentZoom16_nSpots) ' spots in view']);
         else%already at top slice
@@ -650,22 +665,6 @@ pt = get(data.zoom128,'currentpoint');
 newC=xToCol(pt(1,1));
 newR=yToRow(pt(1,2));
 
-%%%%%%%%%%%%%%%%%%%%%
-% 1 July 14
-% If this is too close to the edge it will throw an error when trying to
-% figure out where the zoom16 image should be.  Protect it from that
-%newR and newC should be the upper left corner
-disp('newR, newC');
-disp([newR, newC]);
-disp(data.dataStructure.origSize([2 1]));
-disp(newR-floor(c16H/2));
-newC=max(1,min(newC-floor(c16W/2),data.dataStructure.origSize(2)-c16W+1));
-newR=max(1,min(newR-floor(c16H/2),data.dataStructure.origSize(1)-c16H+1));
-disp([newR, newC]);
-disp(pt(1,:));
-
-%%%%%%%%%%%%%%%%%%%%%%
-
 
 %%%%%%%% I don't know why this is in here.
 % [spotR,spotC]=find(data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)>0);
@@ -701,13 +700,11 @@ c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
 
-disp('c16R c16R+c16H-1 c16C c16C+c16W-1 size(data.blueSlice)');
-disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(data.blueSlice)]);
 
 
-data.currentZoom128_x=min(colToX(data.dataStructure.origSize(2))-c128W+1,max(.5,c16X-c128W/2));
-data.currentZoom128_y=min(rowToY(data.dataStructure.origSize(1))-c128H+1,max(.5,c16Y-c128H/2));
-regionalMaxes16=data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+data.currentZoom128_x=min(colToX(data.dataStructure.origSize(1))-c128W+1,max(.5,c16X-c128W/2));
+data.currentZoom128_y=min(rowToY(data.dataStructure.origSize(2))-c128H+1,max(.5,c16Y-c128H/2));
+[regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(data.blueSlice,c16R, c16C,c16H,c16W);
 data.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
 set(data.nSpots_txt,'String',[num2str(data.currentZoom16_nSpots) ' spots in view']);
 guidata(currhandle,data);
@@ -790,7 +787,7 @@ c128C=xToCol(c128X);
     %rangeImage=mxFullImage-mnFullImage;
     %fullImage(fullImage~=0)=(fullImage(fullImage~=0)-mnFullImage)/rangeImage;
     %fullImage=imscale(fullImage);
-    data.fullImage=imshow(data.dataStructure.fullImage);
+    data.fullImage=imshow(max(data.dataStructure.scaledStack(:,:,max(handles.currentZ-1,1):min(handles.currentZ+1,h)),[],3));
     colormap(gray);
     axis off
     title('Max. Merged Image')
@@ -820,7 +817,8 @@ xlim(get(data.figure_handle,'CurrentAxes'),[c16X c16X+c16W]);
 ylim([c16Y c16Y+c16H]);
 
 if data.highMemory
-    zoom16Column=data.dataStructure.scaledStack(c16R:c16R+c16H-1,c16C:c16C+c16W-1,:);
+    [~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(data.dataStructure.scaledStack,c16R, c16C,c16H,c16W);
+    zoom16Column=data.dataStructure.scaledStack(NR16:SR16,WC16:EC16,:);
     for i=1:5
         if data.currentZ+(i-3)<=data.dataStructure.origSize(3) && data.currentZ+(i-3)>=1
             surf(data.surfPlots{i},zoom16Column(:,:,data.currentZ+(i-3)));
@@ -840,8 +838,8 @@ zoomFactorY=origHeight/data.currentZoom128_height;
 zoomFactor=min(zoomFactorX,zoomFactorY);
 data.zoom128Factor=zoomFactor;
 zoom(data.zoom128Factor);
-%xlim([data.currentZoom128_x data.currentZoom128_x+data.currentZoom128_width]);
-%ylim([data.currentZoom128_y data.currentZoom128_y+data.currentZoom128_height]);
+xlim([data.currentZoom128_x data.currentZoom128_x+data.currentZoom128_width]);
+ylim([data.currentZoom128_y data.currentZoom128_y+data.currentZoom128_height]);
 rectColor=min(1,3*median(currentSlice(:)));
 if get(data.greenBox_checkBox,'Value')
     rectangle('Position',[data.currentZoom16_x, data.currentZoom16_y, data.currentZoom16_width,data.currentZoom16_height],'EdgeColor',[rectColor/3 .8 rectColor/2],'LineWidth',.5);
@@ -949,8 +947,9 @@ set(handles.acceptedNSpots_txt,'String',[num2str(size(handles.dataStructure.good
 
 %now transfer the spots from blueSlice to confirmedSlice and erase from
 %blueSlice - why erase from blueSlice? - so don't go back to it
-handles.confirmedSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
-handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)=zeros(c16H,c16W);
+[~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+handles.confirmedSlice(NR16:SR16,WC16:EC16)=handles.blueSlice(NR16:SR16,WC16:EC16);
+handles.blueSlice(NR16:SR16,WC16:EC16)=zeros(c16H,c16W);
 
 %moves the 16 square along
 [c16X,c16Y,c16R,c16C,handles.blueSlice,handles.confirmedSlice,handles.currentZ,didTopSlice,handles.blueSpots,handles.iCurrentSpot,handles.blueSpotRankList,handles.bkgd,handles.sortedSpotData.scaledValues,handles.sliceSortedSpotData,handles.dataStructure.scaledSlice]=moveZoom16(c16X,c16Y,c16W,c16H,c128X,c128Y,c128W,c128H,handles);
@@ -958,8 +957,6 @@ if didTopSlice==1
     uiresume(gcbf);%this should jump back right after uiwait
 end;
 
-handles.currentZoom16_x=c16X;
-handles.currentZoom16_y=c16Y;
 %always try to keep zoom16 in the middle of zoom128
 %but if at the edge, still do a full square
 handles.currentZoom128_x=min(colToX(handles.dataStructure.origSize(2))-c128W+1,max(.5,c16X-c128W/2));
@@ -969,10 +966,11 @@ c16R=yToRow(c16Y);
 c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
-disp('c16R c16H c16C c16W size(blueSlice)');
-disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
 
-regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+regionalMaxes16=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+
+handles.currentZoom16_x=c16X;
+handles.currentZoom16_y=c16Y;
 handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
 set(handles.nSpots_txt,'String',[num2str(handles.currentZoom16_nSpots) ' spots in view']);
 set(handles.NregionalMaximaLeftInSlice_txt,'String',[num2str(length(handles.blueSpotRankList)) ' regional maxima left']);
@@ -1194,11 +1192,9 @@ if handles.currentZ<handles.dataStructure.origSize(3)
     
     c16R=yToRow(c16Y);
     c16C=xToCol(c16X);
-disp('c16R c16H c16C c16W size(blueSlice)');
-disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
     
-    %now redo regional max stuffb
-    regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+    %now redo regional max stuff
+    [regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
     handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
     set(handles.nSpots_txt,'String',[num2str(handles.currentZoom16_nSpots) ' spots in view']);
     set(handles.greenBox_checkBox,'Value',1)
@@ -1255,7 +1251,8 @@ set(handles.rejectedNSpots_txt,'String',[num2str(size(handles.dataStructure.reje
 [handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot]=removeZoom16SpotsFromBlueSpotsAndUpdateCurrentSpotIndex(newSpots,handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot);
 
 %erase from blueSlice - why erase from blueSlice? - so don't go back to it
-handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)=zeros(c16H,c16W);
+[~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+handles.blueSlice(NR16:SR16,WC16:EC16)=zeros(c16H,c16W);
 
 [c16X,c16Y,c16R,c16C,handles.blueSlice,handles.confirmedSlice,handles.currentZ,didTopSlice,handles.blueSpots,handles.iCurrentSpot,handles.blueSpotRankList,handles.bkgd,handles.sortedSpotData.scaledValues,handles.sliceSortedSpotData,handles.dataStructure.scaledSlice]=moveZoom16(c16X,c16Y,c16W,c16H,c128X,c128Y,c128W,c128H,handles);
 
@@ -1274,10 +1271,9 @@ c16R=yToRow(c16Y);
 c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
-disp('c16R c16H c16C c16W size(blueSlice)');
-disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
-%now redo regional max stuff
-regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+
+[regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+
 handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
 set(handles.nSpots_txt,'String',[num2str(handles.currentZoom16_nSpots) ' spots in view']);
 set(handles.NregionalMaximaLeftInSlice_txt,'String',[num2str(length(handles.blueSpotRankList)) ' regional maxima left']);
@@ -1313,13 +1309,9 @@ iCurrentSpot=handles.iCurrentSpot;
 scaledValues=handles.sortedSpotData.scaledValues;
 sliceSortedSpotData=handles.sliceSortedSpotData;
 
-% 1June14.  Need to add nRows in image, nCols in image in call to
-% goToBlueSpotRank
-imSize=size(handles.blueSlice);
-
 
 %fprintf('Moving zoom16\n');
-[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
+[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
 
 while c16X>10000 %this means it is the next slice
     while 1%are there blueSpots in slice
@@ -1350,7 +1342,7 @@ while c16X>10000 %this means it is the next slice
             %check to make sure that iCurrentSpot is not beyond the
             %blueSpotRankList
             iCurrentSpot=min(iCurrentSpot,length(blueSpotRankList));
-            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
+            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
             break
         end;
     end;
@@ -1480,7 +1472,7 @@ end;%while
 %%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,nRowsInImage,nColsInImage)
+function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W)
 %after I have looked at each blueSpot, I delete it from blueSpots (in the
 %Next callbacks (accept/reject).  so go to next slice (i.e. newSpot=0) if
 %size(blueSpots,1)==0
@@ -1506,20 +1498,9 @@ else
     %     end;
     %    newSpotRankIndex=find(blueSpotRankList==newSpotRank,1,'first');
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % 1June2014
-    % SAR was getting error when the blue spot was too close to the edge.
-    % modified so that it centers at least 8 away from the edges.
-    % however, this requires also passing in the size of the image.
-    % so will have to modify calls to it
-    %c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
-    %c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
-    c16X=colToX(max(1,min(blueSpots(iCurrentSpot,2)-floor(c16W/2),nColsInImage-c16W+1)));
-    c16Y=rowToY(max(1,min(blueSpots(iCurrentSpot,1)-floor(c16H/2),nRowsInImage-c16H+1)));
-    disp(blueSpots(iCurrentSpot,:));
-    disp([c16X,c16Y]);
-    disp([nRowsInImage,nColsInImage,c16W,c16H]);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
+    c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
     
 end;
 
@@ -1566,11 +1547,10 @@ newSpots=getZoom16Spots(c16R,c16H,c16C,c16W,handles.blueSlice,handles.currentZ);
 %remove from blueSpots
 [handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot]=removeZoom16SpotsFromBlueSpotsAndUpdateCurrentSpotIndex(newSpots,handles.blueSpots,handles.blueSpotRankList,handles.iCurrentSpot);
 
-disp('c16R c16H c16C c16W size(blueSlice)');
-disp([c16R c16R+c16H-1 c16C c16C+c16W-1 size(handles.blueSlice)]);
 
 %erase from blueSlice - why erase from blueSlice? - so don't go back to it
-handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)=zeros(c16H,c16W);
+[~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+handles.blueSlice(NR16:SR16,WC16:EC16)=zeros(c16H,c16W);
 
 
 
@@ -1592,7 +1572,8 @@ c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
 
-regionalMaxes16=handles.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1);
+[~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(handles.blueSlice,c16R, c16C,c16H,c16W);
+regionalMaxes16=handles.blueSlice(NR16:SR16,WC16:EC16);
 handles.currentZoom16_nSpots=sum(regionalMaxes16(:)>0);
 set(handles.nSpots_txt,'String',[num2str(handles.currentZoom16_nSpots) ' spots in view']);
 set(handles.NregionalMaximaLeftInSlice_txt,'String',[num2str(size(handles.blueSpots,1)) ' regional maxima left']);
@@ -1753,11 +1734,12 @@ iCurrentSpot=min(max(iCurrentSpot,1),length(blueSpotRankList));
 function newSpots=getZoom16Spots(c16R,c16H,c16C,c16W,blueSlice,currentZ)
 %This function takes a zoom16 portion of the blueSlice and gets the rows
 %and columns of the spots in it
-[spotR,spotC]=find(blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)>0);
+[~,WC16,EC16,NR16,SR16]=shiftZoom16Frame(blueSlice,c16R, c16C,c16H,c16W);
+[spotR,spotC]=find(blueSlice(NR16:SR16,WC16:EC16)>0);
 %need to add z information
 newSpots=[];
 for i=1:size(spotR)
-    newSpots=[newSpots; [spotR(i)+c16R-1, spotC(i)+c16C-1, currentZ]];
+    newSpots=[newSpots; [spotR(i)+NR16-1, spotC(i)+WC16-1, currentZ]];
 end;
 
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -1785,3 +1767,20 @@ function greenBox_checkBox_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of greenBox_checkBox
 guidata(hObject,handles);
 displayImFull(hObject,handles,1);
+
+function [regionalMaxes16,WC16,EC16,NR16,SR16]=shiftZoom16Frame(blueSlice,c16R, c16C,c16H,c16W)
+blueSliceSZ=size(blueSlice);
+NR16=c16R;WC16=c16C;
+SR16=min(c16R+c16H-1,blueSliceSZ(1));
+EC16=min(c16C+c16W-1,blueSliceSZ(2));
+if SR16==blueSliceSZ(1) % Make sure the zoom16 is a 16 x 16 view.
+    RShift=abs(blueSliceSZ(1)-(c16R+c16H-1));
+    NR16=NR16-RShift;
+end
+
+if EC16==blueSliceSZ(2)
+    CShift=abs(blueSliceSZ(2)-(c16C+c16W-1));
+    WC16=WC16-CShift;
+end
+regionalMaxes16=blueSlice(NR16:SR16,WC16:EC16);
+

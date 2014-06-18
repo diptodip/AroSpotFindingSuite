@@ -1,7 +1,7 @@
 function classifySpotsOnDirectory(varargin)
 %% ========================================================================
 %   Name:       classifySpotsOnDirectory.m
-%   Version:    2.0, 5th July 2012
+%   Version:    2.0.1, 5th July 2012
 %   Author:     Allison Wu
 %   Command:    classifySpotsOnDirectory(toOverWrite,trainingSet,dye*)  *Optional Input
 %   Description: a wrapper function that calls classifySpots to execute on all the files on directory
@@ -13,7 +13,9 @@ function classifySpotsOnDirectory(varargin)
 %       - If a particular trainingSet is specified but the dye is not specified, 
 %         the user will be prompted with entering the channel manually.
 %    
-%   Update Log: 2012.09.18 add in the dye input
+%   Update Log: 
+%       - 2012.09.18 add in the dye input
+%       - 2013.03.27 small bug fixes.
 %% ========================================================================
 
 stacks=dir('*_wormGaussianFit.mat');
@@ -55,8 +57,10 @@ if trainingSetSpecified
                 dyeToDo={'tmr'};
             case {'cy5','cy'}
                 dyeToDo={'cy5','cy'};
+            case {'yfp'}
+                dyeToDo={'yfp'};
             case 'all'
-                dyeToDo={'alexa','a594','tmr','cy5','cy'};
+                dyeToDo={'alexa','a594','tmr','cy5','cy','yfp'};
         end
     end
 else

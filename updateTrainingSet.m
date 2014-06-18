@@ -1,7 +1,7 @@
 function trainingSet=updateTrainingSet(trainingSet, worms, spotInfo, varargin)
 %% ========================================================================
 %   Name:       updateTrainingSet.m
-%   Version:    2.0, 11th July 2012
+%   Version:    2.5, 25th Apr. 2013
 %   Author:     Allison Wu
 %   Command:    trainingSet=updateTrainingSet(trainingSet,worms,spotInfo,toRemove*) 
 %   Description:
@@ -17,12 +17,6 @@ function trainingSet=updateTrainingSet(trainingSet, worms, spotInfo, varargin)
 %               * If it is in the training set and toRemove==0, it only
 %               updates the classification.
 %% ========================================================================
-
-statsToUse = {'intensity';'rawIntensity';'totalHeight';'sigmax';'sigmay';'estimatedFloor';'scnmse';'scnrmse';'scr';'scd';'sce';
-    'prctile_50';    'prctile_60'  ;  'prctile_70'  ;  'prctile_80'  ; 'prctile_90';
-    'fraction_center';    'fraction_plusSign'  ;  'fraction_3box'  ;  'fraction_5star'  ;  'fraction_5box';    'fraction_7star' ; 'fraction_3ring';
-    'raw_center';    'raw_plusSign'  ;  'raw_3box'  ;  'raw_5star'  ;  'raw_5box';    'raw_7star' ; 'raw_3ring';
-    'total_area';'sv1';'sv2';'sv3';'sv4';'sv5'};
 
 % toRemove=varargin{1} remove or add spot, default=0
 % Check if the newly added spot is already in the training set.
@@ -115,8 +109,7 @@ if recalculateStats==1
     end
     
     % Stores a dataMatrix ready for Matlab random forest.
-    
-    trainingSet.statsUsed=statsToUse;
+    statsToUse=trainingSet.statsUsed;
     
     % Update the dataMatrix
     trainingSet.dataMatrix.X=zeros(size(trainingSet.spotInfo,1),length(statsToUse));

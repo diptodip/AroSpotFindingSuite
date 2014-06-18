@@ -1,7 +1,7 @@
 function spotStats=updateSpotStats(spotStats)
 %% ========================================================================
 %   Name:       updateSpotStats.m
-%   Version:    2.0, 11th July 2012
+%   Version:    2.5, 25th Apr. 2013
 %   Author:     Allison Wu
 %   Command:    spotStats=updateSpotStats(spotStats)
 %   Description:
@@ -17,9 +17,12 @@ Probs=spotStats.ProbEstimates(~mCuratedSpots);
 IQR=spotStats.IQR(~mCuratedSpots);
 IQRt=trainingSet.RF.IQRthreshold;
 spotTreeProbs=spotStats.spotTreeProbs(~mCuratedSpots,:);
-spotStats.SpotNumEstimate=sum(Probs(IQR<IQRt)>0.5)+sum(Probs(IQR>IQRt))+sum(spotStats.classification(mCuratedSpots,3));
-randSpotNum=binornd(1,spotTreeProbs(IQR>IQRt,:),size(spotTreeProbs(IQR>IQRt,:)));
-range=quantile(sum(randSpotNum,1),trainingSet.RF.quantileRange);
-spotStats.SpotNumRange=sum(Probs(IQR<IQRt)>0.5)+range+sum(spotStats.classification(mCuratedSpots,3));
+spotStats.SpotNumEstimate=sum(Probs>0.5)+sum(mCuratedSpots);
+[g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
+ub=sum(Probs>0.5)+b2g;
+lb=sum(Probs>0.5)-g2b;
+
+spotStats.SpotNumRange=[lb+sum(mCuratedSpots) ub+sum(mCuratedSpots)];
+
 
 end

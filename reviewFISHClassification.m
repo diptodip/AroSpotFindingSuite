@@ -1,8 +1,7 @@
 function varargout = reviewFISHClassification(varargin)  %nameMod
-
 %% =============================================================
 %   Name:    reviewFISHClassification.m
-%   Version: 2.1, 10th July 2012
+%   Version: 2.5.1, 25th Apr. 2013
 %   Authors:  Allison Wu, Scott Rifkin
 %   Command:  reviewFISHClassification(stackName*) *Optional Input
 %   Description: reviewFISHClassification.m is a gui to browse the results of the spot finding algorithm, estimate and/or correct errors, and retraing the classifier if specified.
@@ -67,6 +66,8 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %   Updates:
 %       - 2012 Aug 13th, small bug fixes
 %       - 2013 Mar 19th, small bug fixes
+%       - 2013 May 19th, fix 'index exceeds matrix' problem caused by
+%       including 'edge spots'.
 %   Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
 %   License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
@@ -146,11 +147,22 @@ handles.spotsCurated=[];
 %the code from saveSpotPictures
 
 if isempty(varargin)
-    stackName=input('Please enter the stack name (e.g. tmr001.stk, tmr_Pos1.tif, tmr_001):','s');
-else
+    stackName=input('Please enter the stack name (e.g. tmr001.stk, tmr_Pos1.tif, tmr_001):\n','s');
+    findTraining=input('Are you using a training set derived from this batch of data? [yes[1]/no[0]]\n ');
+elseif length(varargin)==1
     stackName=varargin{1};
+    findTraining=1;
+else   
+    stackName=varargin{1};
+    findTraining=varargin{2};
 end
+
+if ~findTraining
+    trainingSet.sameBatchFlag=zeros(length(trainingSet.spotInfo),1);
+end
+
 [dye, stackSuffix, wormGaussianFitName, segStacksName,spotStatsFileName]=parseStackNames(stackName);
+handles.findTraining=findTraining;
 handles.dye=dye;
 handles.stackSuffix=stackSuffix;
 handles.posNum=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
@@ -508,7 +520,11 @@ if currentSpotClassification(3)~=1
     if currentSpotClassification(1)~=-1
         disp('This spot already was manually marked as bad and now we are changing it to good');
         handles.allLocs(handles.iCurrentSpot_allLocs,4)=1;
-        [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        if handles.findTraining
+            [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        else
+            iCurrentSpot_trainingSet=[];
+        end
         if isempty(iCurrentSpot_trainingSet) % not in the training set
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
@@ -559,7 +575,11 @@ if currentSpotClassification(3)~=0
     
     if currentSpotClassification(1)~=-1
         disp('This spot already was manually marked as bad and now we are changing it to good');
-        [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        if handles.findTraining
+            [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        else
+            iCurrentSpot_trainingSet=[];
+        end
         if isempty(iCurrentSpot_trainingSet) % not in the training set
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
@@ -1041,7 +1061,8 @@ placeholder=-100;
 disp('making good/rejectedLocs')
 % [Location, classification (manual), classification (final), spot index, Prob Estimates, IQR]
 allLocs=[handles.worms{handles.iCurrentWorm}.spotDataVectors.locationStack handles.spotStats{handles.iCurrentWorm}.classification(:,1) handles.spotStats{handles.iCurrentWorm}.classification(:,3), handles.worms{handles.iCurrentWorm}.spotDataVectors.spotInfoNumberInWorm handles.spotStats{handles.iCurrentWorm}.ProbEstimates handles.spotStats{handles.iCurrentWorm}.IQR];
-allLocs=sortrows(allLocs,-7); % sort the spots based on probability estimates
+[allLocs,I]=sortrows(allLocs,-7); % sort the spots based on probability estimates
+allDataMat=handles.worms{handles.iCurrentWorm}.spotDataVectors.dataMat(I,:,:);
 nSpots=size(allLocs,1);
 %need next largest multiple of spotSize(1) (assume square)
 %%%6/28/09 - don't want spots to be too small...have it run off the bottom,
@@ -1067,31 +1088,40 @@ disp(['Doing spot box locations for worm #' num2str(handles.iCurrentWorm)]);
 for si=1:nSpots
     currentR=1+handles.spotSize(1)*floor((si-1)/handles.horizSideSize);
     currentC=1+handles.spotSize(1)*mod((si-1),handles.horizSideSize);
+    % 20130518: use dataMat stored directly.  Do not use the location to
+    % find the dataMat to show to avoid "index exceeds matrix" problems
+    % casused by edge spots.
+    
     NR=max(1,allLocs(si,1)-handles.offset(1));
-    if NR==1
+    %if NR==1
         %then too close to top
-        SR=handles.spotSize(1);
-    else
-        if allLocs(si,1)+handles.offset(1)>size(handles.segMasks{handles.iCurrentWorm},1)
-            SR=size(handles.segMasks{handles.iCurrentWorm},1);
-            NR=size(handles.segMasks{handles.iCurrentWorm},1)-(handles.spotSize(1)-1);
-        else
-            SR=NR+(handles.spotSize(1)-1);
-        end;
-    end;
+    %    SR=handles.spotSize(1);
+    %else
+    %    if allLocs(si,1)+handles.offset(1)>size(handles.segMasks{handles.iCurrentWorm},1)
+    %        SR=size(handles.segMasks{handles.iCurrentWorm},1);
+    %        NR=size(handles.segMasks{handles.iCurrentWorm},1)-(handles.spotSize(1)-1);
+    %    else
+    %        SR=NR+(handles.spotSize(1)-1);
+    %    end;
+    %end;
     WC=max(1,allLocs(si,2)-handles.offset(2));
-    if WC==1
+    %if WC==1
         %then too close to top
-        EC=handles.spotSize(2);
-    else
-        if allLocs(si,2)+handles.offset(2)>size(handles.segMasks{handles.iCurrentWorm},2)
-            EC=size(handles.segMasks{handles.iCurrentWorm},2);
-            WC=size(handles.segMasks{handles.iCurrentWorm},2)-(handles.spotSize(2)-1);
-        else
-            EC=WC+handles.spotSize(2)-1;
-        end;
-    end;
-    dataMat=handles.segStacks{handles.iCurrentWorm}(NR:SR,WC:EC,allLocs(si,3));
+    %    EC=handles.spotSize(2);
+    %else
+    %    if allLocs(si,2)+handles.offset(2)>size(handles.segMasks{handles.iCurrentWorm},2)
+    %        EC=size(handles.segMasks{handles.iCurrentWorm},2);
+    %        WC=size(handles.segMasks{handles.iCurrentWorm},2)-(handles.spotSize(2)-1);
+    %    else
+    %        EC=WC+handles.spotSize(2)-1;
+    %    end;
+    %end;
+      
+    %dataMat=handles.segStacks{handles.iCurrentWorm}(NR:SR,WC:EC,allLocs(si,3));
+    dataMat=permute(allDataMat(si,:,:),[2,3,1]);
+    if min(dataMat(:))==0 % edge spot
+        dataMat=imscale(dataMat,90); 
+    end
     %        rawImage(currentR:currentR+spotSize(1)-1,currentC:currentC+spotSize(2)-1)=dataMat;
     bkgdSubImage(currentR:currentR+handles.spotSize(1)-1,currentC:currentC+handles.spotSize(2)-1)=dataMat-min(dataMat(:));
     handles.spotIndexImage(currentR:currentR+handles.spotSize(1)-1,currentC:currentC+handles.spotSize(2)-1)=zeros(size(dataMat))+si;
@@ -1160,7 +1190,11 @@ for si=1:nSpots%size(handles.goodOutlines,1)
         % Check and see if the spot is in the training set. If it's in the
         % trainingSet, draw a cross
         spotInfo=[handles.posNum, handles.iCurrentWorm, handles.allLocs(si,6)];
-        [~,~,trainingSetIndex]=intersect(spotInfo, handles.trainingSet.spotInfo(:,1:3),'rows');
+        if handles.findTraining
+            [~,~,trainingSetIndex]=intersect(spotInfo, handles.trainingSet.spotInfo(:,1:3),'rows');
+        else
+            trainingSetIndex=[];
+        end
         if ~isempty(trainingSetIndex) % order is the same as allLocs
             handles.trainingSetIndex(si)=trainingSetIndex;
             if handles.allLocs(si,5) ==1 % good spot in training set
@@ -1171,7 +1205,7 @@ for si=1:nSpots%size(handles.goodOutlines,1)
             %handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.goodOutlines(si,1)+1,handles.goodOutlines(si,1)+handles.spotSize(1)-1],'Ydata',[handles.goodOutlines(si,2)+1,handles.goodOutlines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.outLines(si,1)+handles.spotSize(1)-1,handles.outLines(si,1)+1],'Ydata',[handles.outLines(si,2)+1,handles.outLines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             
-        end
-    end
+        end 
+     end
     iRH=iRH+1;
 end

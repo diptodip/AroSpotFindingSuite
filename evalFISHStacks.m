@@ -1,7 +1,7 @@
 function evalFISHStacks(stackName,varargin)  %nameMod
 %% =============================================================
 %   Name:       evalFISHStacks.m
-%   Version:    2.1, 3 July 2012
+%   Version:    2.5.1, 25th Apr. 2013
 %   Author:     Allison Wu, Scott Rifkin
 %   Command:    evalFISHStacks(stackName,varargin)
 %   Description:
@@ -13,9 +13,11 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 %   Files generated:    {dye}_{stackSuffix}_wormGaussianFit.mat
 
 %   Update:
-%       20120730: use try/catch loop to deal with memory problem.  If a
+%       2012 Jul. 30th: use try/catch loop to deal with memory problem.  If a
 %       memory problem occurs, it will clear out the segStacks variable and
 %       re-allocate the memory available in MatLab.
+%       2013 Apr. 25th: add in new stats
+%       2013 May 7th: fix the edge spot problem
 
 %   Note: Do not use spaces in file names.  Use underscores or camelCase.
 %         If you are getting file read errors check to make sure you aren't using illegal characters.
@@ -26,10 +28,12 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 %scd=70,.5
 %meanrsquare=60,.9
 
-versionName='v2.0';
+versionName='v2.5';
 
-cutoffPercentile=70;
+cutoffPercentile=90;
 cutoffStatisticValue=.7;
+%cutoffPercentile=90; % for yeast data
+%cutoffStatisticValue=.5;
 badSliceCutoffStatisticValue=.3;
 cutoffStat='scd';
 cutoffStatBackup='intensity';
@@ -76,7 +80,7 @@ if exist(segStacksFileName,'file')
                 load segStacks_tmp
             end
             
-            try
+            %try
                 worms{ci}.version=versionName;
                 worms{ci}.segStackFile=segStacksFileName;
                 worms{ci}.numberOfPlanes=stackH;
@@ -118,51 +122,47 @@ if exist(segStacksFileName,'file')
                             %                     disp(['Doing spot ' num2str(si)]);
                             %end;
                             %%%%%%%%%%%%%%%%%%%%%
+                            % Check the top border
                             NR=max(1,spotRFilt(si)-offset(1));
-                            if NR==1
-                                %then too close to top
-                                SR=spotSize(1);
-                            else
-                                if spotRFilt(si)+offset(1)>size(wormMask,1)
-                                    SR=size(wormMask,1);
-                                    NR=size(wormMask,1)-(spotSize(1)-1);
-                                else
-                                    SR=NR+(spotSize(1)-1);
-                                end;
-                            end;
+                            % Check the bottom border
+                            SR=min(size(wormMask,1),spotRFilt(si)+offset(1));
+                            % Check the left border
                             WC=max(1,spotCFilt(si)-offset(2));
-                            if WC==1
-                                %then too close to top
-                                EC=spotSize(2);
-                            else
-                                if spotCFilt(si)+offset(2)>size(wormMask,2)
-                                    EC=size(wormMask,2);
-                                    WC=size(wormMask,2)-(spotSize(2)-1);
-                                else
-                                    EC=WC+spotSize(2)-1;
-                                end;
-                            end;
-                            dataMat=wormImage(NR:SR,WC:EC,zi);
-                            dataColumn=wormImage(NR:SR,WC:EC,:);
-                            %adjacentSlices
-                            adjacentSlices=[];
-                            if zi>1
-                                adjacentSlices=wormImage(NR:SR,WC:EC,zi-1);
-                            end;
-                            if zi<size(wormImage,3)
-                                adjacentSlices=cat(3,adjacentSlices,wormImage(NR:SR,WC:EC,zi+1));
-                            end;
+                            % Check the right border
+                            EC=min(size(wormMask,2),spotCFilt(si)+offset(2));
                             
+                            dataMat=zeros(spotSize); % fill in the out of border pixels with zeros.
+                            dataColumn=zeros(spotSize(1),spotSize(2),stackH);
+                            % position the dataMat
+                            w=EC-WC;
+                            l=SR-NR;
+                            if NR==1 
+                                dataMatRRange=[spotSize(1)-l:spotSize(1)];
+                            elseif SR==size(wormMask,1)
+                                dataMatRRange=[1:1+l];
+                            else
+                                dataMatRRange=[1:spotSize(1)];
+                            end
+                            
+                            if WC==1 
+                                dataMatCRange=[spotSize(2)-w:spotSize(2)];
+                            elseif EC==size(wormMask,2)
+                                dataMatCRange=[1:1+w];
+                            else
+                                dataMatCRange=[1:spotSize(2)];
+                            end
+                                                       
+                            dataMat(dataMatRRange,dataMatCRange)=wormImage(NR:SR,WC:EC,zi);
+                            dataColumn(dataMatRRange,dataMatCRange,:)=wormImage(NR:SR,WC:EC,:);
                             regMaxDataMat=imregionalmax(dataMat(2:6,2:6));
                             %dataMat=wormLfish(NR:SR,WC:EC,zi);
-                            %only take if it doesn't overlap the border
-                            maskMat=wormMask(NR:SR,WC:EC);
+                           
                             %also, sometimes there is a bad pixel and so in the middle
                             %of the spot there is a really bright one and a zero...this
                             %is too often counted as a spot.  so eliminate those
-                            [minR,minC]=find(dataMat==min(dataMat(:)));
+                            [minR,minC]=find(dataMat==min(dataMat(dataMat(:)>0)));
                             %fprintf('min(maskMat(:)=%f and norm=%f and nRegmax = %d for spot %d\n',min(maskMat(:)),norm([4-minR(1),4-minC(1)]),sum(regMaxDataMat(:)),si);
-                            if min(maskMat(:))~=0 && norm([4-minR(1),4-minC(1)])>1.5 && sum(regMaxDataMat(:))<=3%can't be more than 3 regional maxima in the 5x5 box
+                            if  norm([4-minR(1),4-minC(1)])>1.5 && sum(regMaxDataMat(:))<=3%can't be more than 3 regional maxima in the 5x5 box
                                 
                                 %fprintf('Trying spot %d now\n',si);
                                 
@@ -421,21 +421,25 @@ if exist(segStacksFileName,'file')
                 disp([ 'Worm -' num2str(ci) ' Position - ' stackSuffix ' Dye - ' dye ':' ])
                 fprintf('Total elapsed time is %g seconds for %d spot, average %g per spots\n', totalTime,totalSpotsTested,totalTime/totalSpotsTested)
                 fprintf('%d candidate spots saved. \n',count)
-            catch err
-                if sum(strcmpi(err.message,'Memory'))~=0
-                    % Try to release more memory....
-                    save segStacks_tmp.mat segStacks
-                    clear segStacks
-                    % Release memory - might not be needed for 64-bit computer
-                    save tmp.mat
-                    clear all
-                    load tmp.mat
-                    rethrow(err)
-                else
-                    err
-                end
-            end
+            %catch err
+            %    if sum(strcmpi(err.message,'Memory'))~=0
+            %        % Try to release more memory....
+            %        save segStacks_tmp.mat segStacks
+            %        clear segStacks
+            %        % Release memory - might not be needed for 64-bit computer
+            %        save tmp.mat
+            %        clear all
+            %        load tmp.mat
+            %        rethrow(err)
+            %    else
+            %        err
+            %    end
+            %end
         end
+        
+        % Add in new stats.
+        worms=addStatsToWormGaussian(worms);
+        
         fprintf('Saving worms to:  %s\n',wormFitFileName);
         save(fullfile(pwd,wormFitFileName),'worms');
         
