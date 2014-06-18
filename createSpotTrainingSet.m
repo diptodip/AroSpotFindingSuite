@@ -33,16 +33,19 @@ else
 end
 
 if exist(trainingSetName, 'file')
-    reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
-    if isempty(reply)
-        reply='N';
-    end
-    
-    if strcmpi(reply,'y')
-        appendTrainingSet=0;
-    else strcmpi(reply,'n')
-        appendTrainingSet=1;
-    end
+    reply='p';
+    while ~strcmpi(reply,'n') && ~strcmpi(reply,'y')
+        reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
+        if isempty(reply)
+            reply='N';
+        end
+        
+        if strcmpi(reply,'y')
+            appendTrainingSet=0;
+        else strcmpi(reply,'n')
+            appendTrainingSet=1;
+        end
+    end;
 else
     appendTrainingSet=0;
 end
@@ -74,7 +77,7 @@ load(segStacksName);
 
 disp('Identify spots in worms...')
 for wi=1:wormNum
-    [goodSpots,badSpots]=identifySpots(floor(stackH/8),segStacks,segMasks,worms,w(wi));
+    [goodSpots,badSpots,doAnotherWorm]=identifySpots(floor(stackH/8),segStacks,segMasks,worms,w(wi));
     if wi==1
         goldSpotsData=goodSpots;
         rejectedSpotsData=badSpots;
@@ -86,6 +89,9 @@ for wi=1:wormNum
             rejectedSpotsData=[rejectedSpotsData;badSpots];
         end
     end
+    if ~doAnotherWorm
+        break
+    end;
 end
 clear segStacks
 

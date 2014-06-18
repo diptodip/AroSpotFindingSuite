@@ -659,8 +659,8 @@ disp('newR, newC');
 disp([newR, newC]);
 disp(data.dataStructure.origSize([2 1]));
 disp(newR-floor(c16H/2));
-newC=max(1,min(newC-floor(c16W/2),data.dataStructure.origSize(2)-c16W+1));
-newR=max(1,min(newR-floor(c16H/2),data.dataStructure.origSize(1)-c16H+1));
+newC=max(1,min(newC,data.dataStructure.origSize(2)-c16W+1));
+newR=max(1,min(newR,data.dataStructure.origSize(1)-c16H+1));
 disp([newR, newC]);
 disp(pt(1,:));
 
@@ -873,18 +873,23 @@ function varargout = identifySpots_OutputFcn(hObject, eventdata, handles)
 % handles.spotListSorted
 
 spotListSorted=handles.sortedSpotData.xyz;
+if size(handles.dataStructure.goodSpots,2)>0
+    [~,ispotListGood,igood]=intersect(spotListSorted,handles.dataStructure.goodSpots,'rows');
+    goodSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
+    goodSpotValueInformation=handles.sortedSpotData.values(ispotListGood);
+    %Note that the below works because spots and rejected spots are a proper
+    %subset of all the candidates in spotListSorted(:,1:3)
+    handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  handles.sortedSpotData.values(ispotListGood)  handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
+end;
+if size(handles.dataStructure.rejectedSpots,2)>0
+    [~,ispotListRej,irej]=intersect(spotListSorted,handles.dataStructure.rejectedSpots,'rows');
+    rejectedSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
+    rejectedSpotValueInformation=handles.sortedSpotData.values(ispotListRej);
+    %Note that the below works because spots and rejected spots are a proper
+    %subset of all the candidates in spotListSorted(:,1:3)
+    handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  handles.sortedSpotData.values(ispotListRej)  handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
+end;
 
-[~,ispotListGood,igood]=intersect(spotListSorted,handles.dataStructure.goodSpots,'rows');
-[~,ispotListRej,irej]=intersect(spotListSorted,handles.dataStructure.rejectedSpots,'rows');
-goodSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
-rejectedSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
-goodSpotValueInformation=handles.sortedSpotData.values(ispotListGood);
-rejectedSpotValueInformation=handles.sortedSpotData.values(ispotListRej);
-
-%Note that the below works because spots and rejected spots are a proper
-%subset of all the candidates in spotListSorted(:,1:3)
-handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  handles.sortedSpotData.values(ispotListGood)  handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
-handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  handles.sortedSpotData.values(ispotListRej)  handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
 
 varargout{1} = handles.dataStructure.goodSpots;
 varargout{2} = handles.dataStructure.rejectedSpots;
@@ -893,15 +898,18 @@ varargout{2} = handles.dataStructure.rejectedSpots;
 % to pass to the modal dialog.
 pos_size = get(handles.figure1,'Position');
 % Call modaldlg with the argument 'Position'.
-user_response = modaldlg('Title','If you are finished shall I close the GUI window?');
+%user_response = modaldlg('Title','If you are finished shall I close the GUI window?');
+user_response = modaldlg('Title','Do another worm if possible?');
 switch user_response
     case {'No'}
         % take no action
+        varargout{3}=0;
     case 'Yes'
         % Prepare to close GUI application window
         %                  .
         %                  .
         %                  .
+        varargout{3}=1;
         delete(handles.figure1)
 end
 
