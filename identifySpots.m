@@ -6,10 +6,12 @@ function varargout = identifySpots(varargin)     %nameMod
 %  Name: identifySpots.m        %nameMod
 %  Version: 2.5.1, 20 May 2013         %nameMod
 %  Author: Allison Wu & Scott Rifkin, webpage: http://www.biology.ucsd.edu/labs/rifkin/
-%  Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%  License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%  Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%  Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
 %  =============================================================
 %  Updates:
 %       2013 Apr. 29th: bug fixes for the zoom128 moving frame problem and
@@ -665,6 +667,22 @@ pt = get(data.zoom128,'currentpoint');
 newC=xToCol(pt(1,1));
 newR=yToRow(pt(1,2));
 
+%%%%%%%%%%%%%%%%%%%%%
+% 1 July 14
+% If this is too close to the edge it will throw an error when trying to
+% figure out where the zoom16 image should be.  Protect it from that
+%newR and newC should be the upper left corner
+disp('newR, newC');
+disp([newR, newC]);
+disp(data.dataStructure.origSize([2 1]));
+disp(newR-floor(c16H/2));
+newC=max(1,min(newC,data.dataStructure.origSize(2)-c16W+1));
+newR=max(1,min(newR,data.dataStructure.origSize(1)-c16H+1));
+disp([newR, newC]);
+disp(pt(1,:));
+
+%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%% I don't know why this is in here.
 % [spotR,spotC]=find(data.blueSlice(c16R:c16R+c16H-1,c16C:c16C+c16W-1)>0);
@@ -871,18 +889,23 @@ function varargout = identifySpots_OutputFcn(hObject, eventdata, handles)
 % handles.spotListSorted
 
 spotListSorted=handles.sortedSpotData.xyz;
+if size(handles.dataStructure.goodSpots,2)>0
+    [~,ispotListGood,igood]=intersect(spotListSorted,handles.dataStructure.goodSpots,'rows');
+    goodSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
+    goodSpotValueInformation=handles.sortedSpotData.values(ispotListGood);
+    %Note that the below works because spots and rejected spots are a proper
+    %subset of all the candidates in spotListSorted(:,1:3)
+    handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  handles.sortedSpotData.values(ispotListGood)  handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
+end;
+if size(handles.dataStructure.rejectedSpots,2)>0
+    [~,ispotListRej,irej]=intersect(spotListSorted,handles.dataStructure.rejectedSpots,'rows');
+    rejectedSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
+    rejectedSpotValueInformation=handles.sortedSpotData.values(ispotListRej);
+    %Note that the below works because spots and rejected spots are a proper
+    %subset of all the candidates in spotListSorted(:,1:3)
+    handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  handles.sortedSpotData.values(ispotListRej)  handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
+end;
 
-[~,ispotListGood,igood]=intersect(spotListSorted,handles.dataStructure.goodSpots,'rows');
-[~,ispotListRej,irej]=intersect(spotListSorted,handles.dataStructure.rejectedSpots,'rows');
-goodSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
-rejectedSpotInfoInformation=[handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
-goodSpotValueInformation=handles.sortedSpotData.values(ispotListGood);
-rejectedSpotValueInformation=handles.sortedSpotData.values(ispotListRej);
-
-%Note that the below works because spots and rejected spots are a proper
-%subset of all the candidates in spotListSorted(:,1:3)
-handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  handles.sortedSpotData.values(ispotListGood)  handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
-handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  handles.sortedSpotData.values(ispotListRej)  handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
 
 varargout{1} = handles.dataStructure.goodSpots;
 varargout{2} = handles.dataStructure.rejectedSpots;
@@ -891,15 +914,18 @@ varargout{2} = handles.dataStructure.rejectedSpots;
 % to pass to the modal dialog.
 pos_size = get(handles.figure1,'Position');
 % Call modaldlg with the argument 'Position'.
-user_response = modaldlg('Title','If you are finished shall I close the GUI window?');
+%user_response = modaldlg('Title','If you are finished shall I close the GUI window?');
+user_response = modaldlg('Title','Do another worm if possible?');
 switch user_response
     case {'No'}
         % take no action
+        varargout{3}=0;
     case 'Yes'
         % Prepare to close GUI application window
         %                  .
         %                  .
         %                  .
+        varargout{3}=1;
         delete(handles.figure1)
 end
 
@@ -1309,9 +1335,13 @@ iCurrentSpot=handles.iCurrentSpot;
 scaledValues=handles.sortedSpotData.scaledValues;
 sliceSortedSpotData=handles.sliceSortedSpotData;
 
+% 1June14.  Need to add nRows in image, nCols in image in call to
+% goToBlueSpotRank
+imSize=size(handles.blueSlice);
+
 
 %fprintf('Moving zoom16\n');
-[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
+[c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
 
 while c16X>10000 %this means it is the next slice
     while 1%are there blueSpots in slice
@@ -1342,7 +1372,7 @@ while c16X>10000 %this means it is the next slice
             %check to make sure that iCurrentSpot is not beyond the
             %blueSpotRankList
             iCurrentSpot=min(iCurrentSpot,length(blueSpotRankList));
-            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W);
+            [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,imSize(1),imSize(2));
             break
         end;
     end;
@@ -1472,7 +1502,7 @@ end;%while
 %%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W)
+function [c16X,c16Y]=goToBlueSpotRank(blueSpots,iCurrentSpot,c16H,c16W,nRowsInImage,nColsInImage)
 %after I have looked at each blueSpot, I delete it from blueSpots (in the
 %Next callbacks (accept/reject).  so go to next slice (i.e. newSpot=0) if
 %size(blueSpots,1)==0
@@ -1498,9 +1528,20 @@ else
     %     end;
     %    newSpotRankIndex=find(blueSpotRankList==newSpotRank,1,'first');
     
-    
-    c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
-    c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % 1June2014
+    % SAR was getting error when the blue spot was too close to the edge.
+    % modified so that it centers at least 8 away from the edges.
+    % however, this requires also passing in the size of the image.
+    % so will have to modify calls to it
+    %c16X=colToX(max(1,blueSpots(iCurrentSpot,2)-floor(c16W/2)));
+    %c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
+    c16X=colToX(max(1,min(blueSpots(iCurrentSpot,2)-floor(c16W/2),nColsInImage-c16W+1)));
+    c16Y=rowToY(max(1,min(blueSpots(iCurrentSpot,1)-floor(c16H/2),nRowsInImage-c16H+1)));
+    disp(blueSpots(iCurrentSpot,:));
+    disp([c16X,c16Y]);
+    disp([nRowsInImage,nColsInImage,c16W,c16H]);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end;
 

@@ -1,7 +1,7 @@
 function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %% ========================================================================
 %   Name: createSpotTrainingSet
-%   Version: 2.5.1 21st Apr. 2014
+%   Version: 2.5 25th Apr. 2013
 %   Author: Allison Wu
 %   Command:
 %   trainingSet=createSpotTrainingSet(stackName,probeName,appendTrainingSet*)
@@ -22,6 +22,12 @@ function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %       - Built-in version check to make sure the new stats are added.
 %       - Fix a bug that introduces mismatches of stats and spotInfo.
 %       
+%
+%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
+%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
+%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
+%
 %% ========================================================================
 
 [dye, stackSuffix, wormGaussianFitName, segStacksName,~]=parseStackNames(stackName);
@@ -34,16 +40,19 @@ else
 end
 
 if exist(trainingSetName, 'file')
-    reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
-    if isempty(reply)
-        reply='N';
-    end
-    
-    if strcmpi(reply,'y')
-        appendTrainingSet=0;
-    else strcmpi(reply,'n')
-        appendTrainingSet=1;
-    end
+    reply='p';
+    while ~strcmpi(reply,'n') && ~strcmpi(reply,'y')
+        reply=input('There is an exisiting training set. Do you want to overwrite it? \n(Otherwise, the program will append new spots to the existing training set.) \n Y/N [N]:','s');
+        if isempty(reply)
+            reply='N';
+        end
+        
+        if strcmpi(reply,'y')
+            appendTrainingSet=0;
+        else strcmpi(reply,'n')
+            appendTrainingSet=1;
+        end
+    end;
 else
     appendTrainingSet=0;
 end
@@ -75,8 +84,7 @@ load(segStacksName);
 
 disp('Identify spots in worms...')
 for wi=1:wormNum
-    disp(w(wi))
-    [goodSpots,badSpots]=identifySpots(floor(stackH/8),segStacks,segMasks,worms,w(wi));
+    [goodSpots,badSpots,doAnotherWorm]=identifySpots(floor(stackH/8),segStacks,segMasks,worms,w(wi));
     if wi==1
         goldSpotsData=goodSpots;
         rejectedSpotsData=badSpots;
@@ -88,6 +96,9 @@ for wi=1:wormNum
             rejectedSpotsData=[rejectedSpotsData;badSpots];
         end
     end
+    if ~doAnotherWorm
+        break
+    end;
 end
 clear segStacks
 
