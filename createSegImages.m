@@ -106,9 +106,9 @@ for i=1:length(stacks)
                 end
             elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
                 if exist([dye{di} '_' stackSuffix '.tif'],'file')
-                    stack=double(loadtiff([dye{di} '_' stackSuffix '.tif']));
+                    stack=double(tiffLoaderPureMatlab([dye{di} '_' stackSuffix '.tif']));
                 elseif exist([dye{di} '__' stackSuffix '.tif'],'file')
-                    stack=loadtiff([dye{di} '__' stackSuffix '.tif']);
+                    stack=tiffLoaderPureMatlab([dye{di} '__' stackSuffix '.tif']);
                 else
                     fprintf('Failed to find the file %s .', [dye{di} '_' stackSuffix '.tif'])
                 end
@@ -124,7 +124,7 @@ for i=1:length(stacks)
                 for zi=1:size(stack,3)
                     wormImage(:,:,zi)=imresize(double(imcrop(stack(:,:,zi),bb.BoundingBox)),reSize).*wormMask;
                     wil=wormImage(:,:,zi);
-                    wil=wil(wil>0);
+                    wil=wil(wil>0);%don't change to their suggested equivalent...doesn't work
                     pwil=max(prctile(wil,20));
                     %disp([num2str(zi) ' ' num2str(pwil)]);
                     wormImage(:,:,zi)=wormImage(:,:,zi)/pwil;%takes care of out of focus ones

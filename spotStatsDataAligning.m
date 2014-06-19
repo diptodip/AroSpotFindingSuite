@@ -31,12 +31,6 @@ function spotStatsDataAligning(fileSuffix,varargin)
 %       scatter plot of errorPercentage v.s. spot number.
 %       - 2013 May 22th: fix the plotting problem of having only several
 %       channels.
-%
-%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
-%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
-%
 %% ========================================================================
 
 if isempty(varargin)
@@ -46,7 +40,7 @@ else
 end
 
 % Find available color channels first
-initialnumber = '_Pos1';
+initialnumber = '_Pos0';
 d = dir(['*' initialnumber '_spotStats.mat']);
 currcolor = 1;
 for i = 1:length(d)
@@ -59,7 +53,7 @@ for i = 1:length(d)
 end;
 dye=sort(dye);
 disp(dye);
-
+wormData.dye=dye;
 % figure out how many embryos are in this dataset.
 wormCount=0;
 posCount=dir([dye{1} '**_spotStats.mat']);
@@ -73,9 +67,9 @@ fprintf('There are %d embryos in the dataset.\n', wormCount);
 disp('Aligning fluorescence data...')
 % This assumes there are 3 channels - alexa, cy5, tmr.
 % If the data set doesn't have any one of the channel, the values would be -1.
-wormData.spotNum=-1*ones(wormCount,3+3+alignDapi);
-wormData.U=zeros(wormCount,3);
-wormData.L=zeros(wormCount,3);
+wormData.spotNum=-1*ones(wormCount,3+4+alignDapi);
+wormData.U=zeros(wormCount,4);
+wormData.L=zeros(wormCount,4);
 wormData.spotNum(:,1)=[1:wormCount]';
 
 wormIndex=0;
@@ -116,6 +110,8 @@ for k=1:length(dye)
                         di=2;
                     case {'tmr'}
                         di=3;
+                    case {'yfp'}
+                        di=4;
                 end
                 wormData.spotNum(wormIndex,3+di)=spotStats{i}.SpotNumEstimate;
                 wormData.U(wormIndex,di)=abs(spotStats{i}.SpotNumRange(2)-spotStats{i}.SpotNumEstimate);
@@ -127,10 +123,10 @@ for k=1:length(dye)
 end
 
 wormData.meanRange=mean(wormData.U+wormData.L);
-wormData.errorPercentage=((wormData.U+wormData.L)/2)./wormData.spotNum(:,4:6);
+wormData.errorPercentage=((wormData.U+wormData.L)/2)./wormData.spotNum(:,4:7);
 clf
 h=figure(1);
-for k=1:3
+for k=1:4
     scatter(wormData.spotNum(:,k+3),wormData.errorPercentage(:,k),'.')
     hold on
 end
@@ -138,7 +134,7 @@ xlim([0 1500])
 ylim([0 2])
 xlabel('Spot Number')
 ylabel('ErrorRange/SpotNumEstimate')
-legend('alexa','cy5','tmr')
+legend('alexa','cy5','tmr','yfp')
 saveas(h,['ErrorPercentagePlot_' fileSuffix])
 hold off
 
@@ -164,10 +160,12 @@ if alignDapi
             load(nuclei(n).name)
             for j=1:length(allembryos)
                 [~,~,wormIndex]=intersect([posNum,j],wormData.spotNum(:,2:3),'rows');
+                if allembryos{j}.isgood
                 if isfield(allembryos{j}.dapistr, 'pts') 
                     if ~isempty(allembryos{j}.dapistr.pts)
                         wormData.spotNum(wormIndex,end)=length(allembryos{j}.dapistr.pts);
                     end
+                end
                 end
                 
             end
@@ -193,22 +191,25 @@ if alignDapi
     
        
     % Plot womrData by dye
-    color={'b','g','m'};
+    color={'b','g','m','r'};
     clf
     for p=1:length(dye)
         subplot(length(dye),1,p)
         %scatter(wormData.spotNum(:,end),wormData.spotNum(:,3+p),color{p},'.')
-        n=find(strcmp(dye(p)),{'a594','cy5','tmr'});
+        n=find(strcmp(dye(p),{'a594','cy5','tmr','yfp'}));
         h=errorbar(wormData.spotNum(:,end),wormData.spotNum(:,3+n),wormData.L(:,n),wormData.U(:,n),[color{p} '.']);
         errorbar_tick(h,1000)
-        xlim([0, 250]);ylim([0,1500]);
+        %xlim([0, 250]);
+        %ylim([0,1500]);
         xlabel('Number of Nuclei');ylabel('Number of Spots');
         title(dye{p})
     end
     hold off
+    fprintf('Plotted %d embryos.\n', sum(wormData.spotNum(:,end)>0))
     saveas(gcf, fullfile(pwd,['wormData_' fileSuffix '_quickPlots.fig']))
 end
 
+%wormData.header={'worm_Index', 'position_Number','worm_Number', dye{1:end}, 'nuclei'}
 save(fullfile(pwd,['wormData_' fileSuffix '.mat']),'wormData')
 
 

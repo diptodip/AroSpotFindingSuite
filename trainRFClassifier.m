@@ -1,7 +1,7 @@
 function trainingSet=trainRFClassifier(trainingSet,varargin)
 %% ============================================================
-%   Name:       trainRFClassifier.m
-%   Version:    2.5.1, 25th Apr. 2013
+%   Name:       traingRFClassifier.m
+%   Version:    2.5.2, 25th Apr. 2013
 %   Author:     Allison Wu
 %   Command: trainingSet=trainRFClassifier(trainingSet,outputSuffix*)
 %   Description: train and generate a random forest with the training set of size N.
@@ -66,17 +66,13 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %           - use calculateErrorRange.m to calculate error range.
 %       2013 May 22nd:
 %           - bug fixes to avoid generating trees with only one node.
-%
-%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
-%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
-%
+%       2013 July 16th:
+%           - change reliable to concordant, unreliable to discordant
 %% =============================================================
 tic
 parameters
 if isempty(varargin)
-    ntrees=1000;
+    ntrees=5000;
     FBoot=1;
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
@@ -102,7 +98,7 @@ if isfield(trainingSet,'RF')
 end
 
 % Check if new stats are added.
-if ~strcmp('ver. 2.5, new stats added',trainingSet.version)
+if ~strfind(trainingSet.version, 'ver. 2.5')
     display('Detect an older version. Update the trainingSet with new stats.')
     trainingSet=addStatsToTrainingSet(trainingSet);
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
@@ -135,8 +131,8 @@ trainingSet.RF.dataMatrixUsed=trainSetData.X;
 % Find the opitmal number of features used to build each tree.
 % Modified based on tuneRF in R.
 disp('Looking for the optimal number of features to sample....')
-%nTreeTry=500;
-%improve=0.01;
+nTreeTry=500;
+improve=0.01;
 stepFactor=1; 
 M=sum(VarImp>threshold);
 mStart=floor(sqrt(M));
@@ -212,7 +208,7 @@ trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.
 trainingSet.RF.MSE=mean((trainingSet.RF.ProbEstimates-trainSetData.Y).^2);
 trainingSet.RF.IQR=IQR;
 trainingSet.RF.IQRthreshold=IQRt;
-trainingSet.RF.UnreliablePortion=mean(IQR>IQRt);
+trainingSet.RF.discordantPortion=mean(IQR>IQRt);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
 trainingSet.RF.quantile=75; 
@@ -226,7 +222,17 @@ trainingSet.RF.SpotNumRange=[lb ub];
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
 trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
-trainingSet.RF.reliableErrorRate=mean(trainingSet.RF.ResponseY(IQR<0.3)~=trainSetData.Y(IQR<0.3));
+trainingSet.RF.concordantErrorRate=mean(trainingSet.RF.ResponseY(IQR<0.3)~=trainSetData.Y(IQR<0.3));
+
+% version check
+if isfield(trainingSet.RF,'UnreliablePortion')
+    rmfield(trainingSet.RF,'UnreliablePortion');
+end
+if isfield(trainingSet.RF,'reliableErrorRate')
+    rmfield(trainingSet.RF,'reliableErrorRate');
+end
+
+
 
 h=figure('Visible','off');
 scatter(Probs(trainSetData.Y~=1),IQR(trainSetData.Y~=1),'.','blue')
