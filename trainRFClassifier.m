@@ -72,7 +72,7 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 tic
 parameters
 if isempty(varargin)
-    ntrees=5000;
+    ntrees=1000;
     FBoot=1;
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
@@ -145,6 +145,8 @@ fprintf('NVarToSample \t OOB Error \t  Improve\n')
 while m<ceil(M-0.5*mStart)
     testRF=TreeBagger(nTreeTry,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',m,'splitcriterion','deviance');
     errorCurr=oobError(testRF,'mode','ensemble');
+    % 2014.05.18 test
+    %errorCurr
     if isempty(errorOld)
         errorOld=errorCurr;
         mBest=m;

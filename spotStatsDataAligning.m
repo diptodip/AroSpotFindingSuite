@@ -9,22 +9,22 @@ function spotStatsDataAligning(fileSuffix,varargin)
 %       the program will search for possible files that save nuclei number
 %       information.
 %       - saves spot number estimates in a wormData structure array:
-%           * wormData.spotNum=[worm_Index position_Number  worm_Number  a595  cy5  tmr nuclei]   
+%           * wormData.spotNum=[worm_Index position_Number  worm_Number  a595  cy5  tmr nuclei]
 %               > worm_Index: unique index for each worm within the whole data set
 %               > worm_Number: the worm number within the stack.
-%               > for the columns 1:4, if there's no values retrieved (channel absent or data not analyzed 
+%               > for the columns 1:4, if there's no values retrieved (channel absent or data not analyzed
 %                 or nuclei not counted),it will have a -1 entry.
 %           * wormData.U: upper error bar length for each datapoint in each channel
 %           * wormData.L: lower error bar length for each datapoint in each channel
-%            
-%   Files required: 
+%
+%   Files required:
 %       - **_spotStats.mat
 %       - **_embryoDataStructure_**.mat or newNucallembryos_**.mat if alignDapi==1
-%   Files generated: 
+%   Files generated:
 %       - wormData_{fileSuffix}.mat,
 %       - wormData_{fileSuffix}_quickPlots.fig if alignDapi==1
 
-%   Updates: 
+%   Updates:
 %       - 2012 Aug. 8th: add in the field of meanRange to
 %       give a rough idea of how well the spots are classified.
 %       - 2013 March: add in the field of errorPercentage and plot out a
@@ -40,7 +40,8 @@ else
 end
 
 % Find available color channels first
-initialnumber = '_Pos0';
+%initialnumber = '_Pos0';
+initialnumber = '_Pos1';
 d = dir(['*' initialnumber '_spotStats.mat']);
 currcolor = 1;
 for i = 1:length(d)
@@ -100,9 +101,6 @@ for k=1:length(dye)
         for i=1:length(spotStats)
             [~,~,wormIndex]=intersect([posNum i],wormData.spotNum(:,2:3),'rows');
             if strcmp(dye{k},stackPrefix{1})
-                if spotStats{i}.SpotNumEstimate>1000
-                    disp(posCount(j).name)
-                end
                 switch stackPrefix{1}
                     case {'a594','alexa'}
                         di=1;
@@ -113,9 +111,19 @@ for k=1:length(dye)
                     case {'yfp'}
                         di=4;
                 end
-                wormData.spotNum(wormIndex,3+di)=spotStats{i}.SpotNumEstimate;
-                wormData.U(wormIndex,di)=abs(spotStats{i}.SpotNumRange(2)-spotStats{i}.SpotNumEstimate);
-                wormData.L(wormIndex,di)=abs(spotStats{i}.SpotNumRange(1)-spotStats{i}.SpotNumEstimate);
+                if isfield(spotStats{i},'noSpot')
+                    wormData.spotNum(wormIndex,3+di)=0;
+                    wormData.U(wormIndex,di)=0;
+                    wormData.L(wormIndex,di)=0;
+                else
+                    if spotStats{i}.SpotNumEstimate>1000
+                        disp(posCount(j).name)
+                    end
+                    
+                    wormData.spotNum(wormIndex,3+di)=spotStats{i}.SpotNumEstimate;
+                    wormData.U(wormIndex,di)=abs(spotStats{i}.SpotNumRange(2)-spotStats{i}.SpotNumEstimate);
+                    wormData.L(wormIndex,di)=abs(spotStats{i}.SpotNumRange(1)-spotStats{i}.SpotNumEstimate);
+                end
             end
             
         end
@@ -161,11 +169,11 @@ if alignDapi
             for j=1:length(allembryos)
                 [~,~,wormIndex]=intersect([posNum,j],wormData.spotNum(:,2:3),'rows');
                 if allembryos{j}.isgood
-                if isfield(allembryos{j}.dapistr, 'pts') 
-                    if ~isempty(allembryos{j}.dapistr.pts)
-                        wormData.spotNum(wormIndex,end)=length(allembryos{j}.dapistr.pts);
+                    if isfield(allembryos{j}.dapistr, 'pts')
+                        if ~isempty(allembryos{j}.dapistr.pts)
+                            wormData.spotNum(wormIndex,end)=length(allembryos{j}.dapistr.pts);
+                        end
                     end
-                end
                 end
                 
             end
@@ -189,7 +197,7 @@ if alignDapi
         wormData.spotNum(I,end)=-1;
     end
     
-       
+    
     % Plot womrData by dye
     color={'b','g','m','r'};
     clf
@@ -199,8 +207,8 @@ if alignDapi
         n=find(strcmp(dye(p),{'a594','cy5','tmr','yfp'}));
         h=errorbar(wormData.spotNum(:,end),wormData.spotNum(:,3+n),wormData.L(:,n),wormData.U(:,n),[color{p} '.']);
         errorbar_tick(h,1000)
-        %xlim([0, 250]);
-        %ylim([0,1500]);
+        xlim([0, 250]);
+        ylim([0,1000]);
         xlabel('Number of Nuclei');ylabel('Number of Spots');
         title(dye{p})
     end

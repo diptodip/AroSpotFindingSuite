@@ -10,6 +10,7 @@ function worms=addStatsToWormGaussian(worms)
 %% ========================================================================
 for j=1:length(worms)
 % Adding the delta stats
+if ~isempty(worms{j}.spotDataVectors)
 deltaStats=calculateDeltaStats(worms{j}.spotDataVectors.dataMat);
 
 % Add the ratioSigmaXY
@@ -35,6 +36,7 @@ for k=1:length(statsName)
 end
 
 worms{j}.version='v2.5';
+end
 end
 
 wormFileName=strrep(worms{1}.segStackFile,'_SegStacks.mat','_wormGaussianFit.mat');

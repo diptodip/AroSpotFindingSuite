@@ -97,6 +97,8 @@ if ~isempty(worms)
         tic
         
         fprintf('Doing worm %d ...\n',wi)
+        if ~isempty(worms{wi}.spotDataVectors)
+
         spotNum=length(worms{wi}.spotDataVectors.rawValue);
         allDataCenter=repmat(trainingSet.allDataCenter,[spotNum,1]);
         % Need to add in SVD stats.
@@ -120,17 +122,25 @@ if ~isempty(worms)
             ClassProbs=classprob(Trees{n},nodes);
             spotTreeProbs(:,n)=ClassProbs(:,2);
         end
+        load A
+        sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
         
         spotStats{wi}.spotTreeProbs=spotTreeProbs;
-        Probs=mean(spotTreeProbs,2);
+        
+        %Probs=mean(spotTreeProbs,2);
+        %Probs=mean(sigfunc(A,spotTreeProbs),2);
+        Probs=sigfunc(A,mean(spotTreeProbs,2));
         IQR=iqr(spotTreeProbs,2);
+        %IQR=iqr(sigfunc(A,spotTreeProbs),2);
         IQRt=trainingSet.RF.IQRthreshold;
         spotStats{wi}.ProbEstimates=Probs;
         
-        [g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
-  
-        ub=sum(Probs>0.5)+b2g;
-        lb=sum(Probs>0.5)-g2b;
+        %[g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
+        %ub=sum(Probs>0.5)+b2g;
+        %lb=sum(Probs>0.5)-g2b;
+        randP=binornd(1,repmat(Probs,1,1000),length(Probs),1000);
+        ub=prctile(sum(randP),97.5);
+        lb=prctile(sum(randP),2.5);
         spotStats{wi}.SpotNumRange=[lb ub];
         
         spotStats{wi}.SpotNumEstimate=sum(Probs>0.5);
@@ -171,6 +181,10 @@ if ~isempty(worms)
         spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
         
         spotStats{wi}.locAndClass=[worms{wi}.spotDataVectors.locationStack spotStats{wi}.classification(:,3)];
+        else
+            spotStats{wi}.noSpot=1;
+        end
+            
     end
     
     spotStatsName=[dye '_Pos' num2str(posNumber) '_spotStats.mat'];
