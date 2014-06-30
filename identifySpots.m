@@ -104,7 +104,7 @@ function varargout = identifySpots(varargin)     %nameMod
 
 % Edit the above text to modify the response to help identifySpots
 
-% Last Modified by GUIDE v2.5 09-Nov-2011 11:57:56
+% Last Modified by GUIDE v2.5 20-Jun-2014 22:44:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -314,7 +314,10 @@ handles.dataStructure=dataStructure;
 handles.dataStructure.origSize=[size(dataStructure.segMasks) handles.worms{dataStructure.wi}.numberOfPlanes];%size(handles.dataStructure.scaledStack);
 %x=1,y=1 is NW,  x runs W-E, y runs N-S
 
-zoom128Size=512;
+%Deal with the slider
+zoom128Size=get(handles.zoom128_slider,'Value');
+set(handles.zoom128_slider,'Max',max(size(dataStructure.segMasks)));
+set(handles.zoom128_slider_txt,'String',['Zoom128 Size: ' num2str(get(handles.zoom128_slider,'Value'))]);
 
 handles.currentZoom16_width=16;
 handles.currentZoom128_width=zoom128Size;
@@ -778,6 +781,13 @@ if data.highMemory
 else
     currentSlice=data.dataStructure.scaledSlice;
 end;
+
+%get the zoom128 size
+data.currentZoom128_width=get(data.zoom128_slider,'Value');
+data.currentZoom128_height=get(data.zoom128_slider,'Value');
+set(handles.zoom128_slider_txt,'String',['Zoom128 Size: ' num2str(get(handles.zoom128_slider,'Value'))]);
+
+
 c16X=data.currentZoom16_x;
 c16Y=data.currentZoom16_y;
 c16W=data.currentZoom16_width;
@@ -796,25 +806,25 @@ c128C=xToCol(c128X);
 %not...yes when i move, no when i toggle maxima
 
 %if data.highMemory
-    set(data.figure_handle,'CurrentAxes',data.fullImage);
-    %fullColor=cat(3,currentSlice,currentSlice.*(~data.dataStructure.segMasks),currentSlice.*(~data.dataStructure.segMasks));
-    h=size(data.dataStructure.scaledStack,3);
-    %fullImage=max(data.dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3);
-    %mxFullImage=max(fullImage(fullImage~=0));
-    %mnFullImage=min(fullImage(fullImage~=0));
-    %rangeImage=mxFullImage-mnFullImage;
-    %fullImage(fullImage~=0)=(fullImage(fullImage~=0)-mnFullImage)/rangeImage;
-    %fullImage=imscale(fullImage);
-    data.fullImage=imshow(max(data.dataStructure.scaledStack(:,:,max(handles.currentZ-1,1):min(handles.currentZ+1,h)),[],3));
-    colormap(gray);
-    axis off
-    title('Max. Merged Image')
-    %note that rectangle x,y is axes (spatial) coordinate.
-    %it doesn't work the same way with an axes created by "plot" as an axes
-    %created by "imshow"...for imshow, the NW corner is (.5, .5) for plot, SW
-    %corner is (0,0)
-    rectangle('Position',[c128X, c128Y, c128W,c128H],'EdgeColor','g');
-    rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor','y');
+set(data.figure_handle,'CurrentAxes',data.fullImage);
+%fullColor=cat(3,currentSlice,currentSlice.*(~data.dataStructure.segMasks),currentSlice.*(~data.dataStructure.segMasks));
+h=size(data.dataStructure.scaledStack,3);
+%fullImage=max(data.dataStructure.scaledStack(:,:,floor(h/5):ceil(h*4/5)),[],3);
+%mxFullImage=max(fullImage(fullImage~=0));
+%mnFullImage=min(fullImage(fullImage~=0));
+%rangeImage=mxFullImage-mnFullImage;
+%fullImage(fullImage~=0)=(fullImage(fullImage~=0)-mnFullImage)/rangeImage;
+%fullImage=imscale(fullImage);
+data.fullImage=imshow(max(data.dataStructure.scaledStack(:,:,max(handles.currentZ-1,1):min(handles.currentZ+1,h)),[],3));
+colormap(gray);
+axis off
+title('Max. Merged Image')
+%note that rectangle x,y is axes (spatial) coordinate.
+%it doesn't work the same way with an axes created by "plot" as an axes
+%created by "imshow"...for imshow, the NW corner is (.5, .5) for plot, SW
+%corner is (0,0)
+rectangle('Position',[c128X, c128Y, c128W,c128H],'EdgeColor','g');
+rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor','y');
 %end;
 
 set(data.figure_handle,'CurrentAxes',data.zoom16);
@@ -1825,3 +1835,27 @@ if EC16==blueSliceSZ(2)
 end
 regionalMaxes16=blueSlice(NR16:SR16,WC16:EC16);
 
+
+
+
+% --- Executes on slider movement.
+function zoom128_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to zoom128_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+guidata(hObject,handles);
+displayImFull(hObject,handles,0);
+
+% --- Executes during object creation, after setting all properties.
+function zoom128_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to zoom128_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
