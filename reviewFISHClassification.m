@@ -420,6 +420,8 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%disp('in OutputFcn');
+
 % Get default command line output from handles structure
 
 varargout{1} = handles.output;
@@ -445,6 +447,8 @@ switch button
                 save(wormGaussianFitName,'worms');
                 spotStats=handles.spotStats;
                 save(spotStatsFileName,'spotStats');
+                disp(spotStats{1});
+                disp(spotStatsFileName);
                 delete(handles.figure1)
         end
         
@@ -456,6 +460,7 @@ switch button
         worms=handles.worms;
         save(wormGaussianFitName,'worms');
         spotStats=handles.spotStats;
+        %disp(spotStats{1});
         save(spotStatsFileName,'spotStats');
         delete(handles.figure1)
         disp('Rerunning randomForest with the latest amendments');
@@ -464,6 +469,7 @@ switch button
         handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
         
 end
+disp('output fcn done');
 %pos_size = get(handles.figure1,'Position');
 
 
@@ -636,29 +642,32 @@ function done_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.spotStats{handles.iCurrentWorm}.spotsFixed=1;
-handles.spotStats{handles.iCurrentWorm}=updateSpotStats(handles.spotStats{handles.iCurrentWorm});
-if handles.iCurrentWorm<length(handles.worms)
-    handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
-    while ~handles.worms{handles.iCurrentWorm}.goodWorm%if the worm is bad
-        handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
+data=guidata(hObject);
+
+data.spotStats{data.iCurrentWorm}.spotsFixed=1;
+data.spotStats{data.iCurrentWorm}=updateSpotStats(data.spotStats{data.iCurrentWorm});
+set(data.arrowSpot_button,'Value',1)
+guidata(hObject,data);
+if data.iCurrentWorm<length(data.worms)
+    data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
+    while ~data.worms{data.iCurrentWorm}.goodWorm%if the worm is bad
+        data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
     end
-    if ~isfield(handles.worms{handles.iCurrentWorm},'spotsFixed')
-        handles.worms{handles.iCurrentWorm}.spotsFixed=0;
+    if ~isfield(data.worms{data.iCurrentWorm},'spotsFixed')
+        data.worms{data.iCurrentWorm}.spotsFixed=0;
     end
-    set(handles.fileName_button,'Value',handles.worms{handles.iCurrentWorm}.spotsFixed);
+    set(data.fileName_button,'Value',data.worms{data.iCurrentWorm}.spotsFixed);
     
-    handles=drawTheLeftPlane(handles);
+    data=drawTheLeftPlane(data);
     
-    nGood=sum(handles.allLocs(:,5));
-    guidata(hObject, handles);
+    nGood=sum(data.allLocs(:,5));
+    guidata(hObject, data);
     
 else%then completely done-write training set and new spotFile,  21April2011 and goldSpots and rejectedSpots files
+    
     uiresume(gcbf);
 end
-set(handles.arrowSpot_button,'Value',1)
-guidata(hObject,handles);
-displayImFull(hObject,handles,0);
+displayImFull(hObject,data,0);
 
 % --- Executes on mouse press over axes background.
 function spotResults_ButtonDownFcn(currhandle, eventdata)
@@ -985,7 +994,8 @@ function allDone_button_Callback(hObject, eventdata, handles)
 
 handles.spotStats{handles.iCurrentWorm}.spotsFixed=1;
 handles.spotStats{handles.iCurrentWorm}=updateSpotStats(handles.spotStats{handles.iCurrentWorm});
-
+%SAR - 30June2014 Added the following line
+guidata(hObject,handles);
 uiresume(gcbf);
 
 
