@@ -98,6 +98,11 @@ for wi=1:wormNum
     end
     if ~doAnotherWorm
         break
+    else %doAnotherWorm
+        disp(['# good spots: ' num2str(length(goodSpots)) ' # bad spots: ' num2str(length(badSpots))]);
+        if wi==wormNum
+            disp('No more worms to do in this image!');
+        end;
     end;
 end
 clear segStacks

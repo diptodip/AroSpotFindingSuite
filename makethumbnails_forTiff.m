@@ -4,8 +4,7 @@
  
 tiffind = 10:25;
  
- 
-initialnumber = '_Pos0';
+initialnumber = '_Pos10';
  
 % First, let's find the color channels
 d = dir(['*' initialnumber '*.tif']);

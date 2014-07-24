@@ -1,7 +1,7 @@
 function spotStats=classifySpots(worms,varargin)
 %% ========================================================================
 %   Name:       classifySpots.m
-%   Version:    2.5, 25th Apr. 2013
+%   Version:    2.5.1, 23rd Jul. 2014
 %   Author:     Allison Wu
 %   Command:    spotStats=classifySpots(worms,trainingSet*) *Optional Input
 %   Description: classify the spots using the trained classifier
@@ -32,6 +32,7 @@ function spotStats=classifySpots(worms,varargin)
 %   Files generated: {dye}_{stackSuffix}_spotStats.mat
 %
 %   Updates:
+%       - 2014.07.23 : new prediction interval.
 %       - add in version check to detect older version.  If detected, new
 %       stats will be calculated and added.
 %       - update the way of spot number estimation.
@@ -126,28 +127,16 @@ if ~isempty(worms)
         sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
         
         spotStats{wi}.spotTreeProbs=spotTreeProbs;
-        
-        %Probs=mean(spotTreeProbs,2);
-        %Probs=mean(sigfunc(A,spotTreeProbs),2);
         Probs=sigfunc(A,mean(spotTreeProbs,2));
-        IQR=iqr(spotTreeProbs,2);
-        %IQR=iqr(sigfunc(A,spotTreeProbs),2);
-        IQRt=trainingSet.RF.IQRthreshold;
         spotStats{wi}.ProbEstimates=Probs;
-        
-        %[g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
-        %ub=sum(Probs>0.5)+b2g;
-        %lb=sum(Probs>0.5)-g2b;
         randP=binornd(1,repmat(Probs,1,1000),length(Probs),1000);
         ub=prctile(sum(randP),97.5);
         lb=prctile(sum(randP),2.5);
         spotStats{wi}.SpotNumRange=[lb ub];
         
         spotStats{wi}.SpotNumEstimate=sum(Probs>0.5);
-        spotStats{wi}.quantile=trainingSet.RF.quantile;
         spotStats{wi}.Margin=abs(Probs*2-1);
-        spotStats{wi}.IQR=IQR;
-        spotStats{wi}.UnreliablePortion=mean(IQR>IQRt);
+
         
         %spotStats{wi}.classification=[manual,auto,final]
         spotStats{wi}.classification=zeros(spotNum,3);
@@ -176,9 +165,16 @@ if ~isempty(worms)
             fprintf('%d spots out of  %d manually curated spots were classified incorrectly.\n', sum(index),sum(manualIndex))
             spotStats{wi}.msg=[ num2str(sum(index)) ' spots out of ' num2str(sum(manualIndex))  ' manually curated spots were classified incorrectly.'];
         end
+        spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
+        % If there are spots that are manually corrected, update the total
+        % spot number.
+        if sum(manualIndex)>0
+            spotStats{wi}=updateSpotStats(spotStats{wi});
+        end
+        
         %spotStats{wi}.spotNumFinal=spotStats{wi}.SpotNumEstimate-;
         toc
-        spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
+        
         
         spotStats{wi}.locAndClass=[worms{wi}.spotDataVectors.locationStack spotStats{wi}.classification(:,3)];
         else
