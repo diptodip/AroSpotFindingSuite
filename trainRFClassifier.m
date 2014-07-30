@@ -201,17 +201,16 @@ end
 
 
 %% Calibrate the probabilities
-load parametersForSigmoidProbabilityCalibrationCurve
-sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
+
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
-Probs=sigfunc(parametersForSigmoidProbabilityCalibrationCurve,mean(spotTreeProbs,2));
+Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
 save(fullfile(pwd,[suffix '_RF.mat']),'Trees');
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
-trainingSet.RF.ProbEstimates=Probs;
+
 
 %% Make interval estimate
 trainingSet.RF.intervalWidth=95;

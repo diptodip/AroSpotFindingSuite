@@ -13,7 +13,6 @@ function [lbub,distributionSpotCount,spotNumEstimate]=makeSpotCountInterval(spot
 %
 %   Files required:     *spotStats.mat file or trainingSet*.mat file
 %                           File name examples: cy5_Pos0_spotStats.mat
-%                        parametersForSigmoidProbabilityCalibrationCurve.mat file.  This has the probability calibration curve
 %                                           
 %   Files generated:    none
 %   Output:             3 variables. 
@@ -40,10 +39,8 @@ sdProbs=std(spotStatsOrTrainingSetRF.spotTreeProbs(~manuallyCurated,:),[],2)/sqr
 meanProbsWithError=normrnd(repmat(meanProbs,1,nBoots),repmat(sdProbs,1,nBoots),length(meanProbs),nBoots);
 
 %% Calibrate the bootstrap probabilities and also the mean probabilities
-load parametersForSigmoidProbabilityCalibrationCurve
-sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
-calibratedMeanProbsWithError=sigfunc(parametersForSigmoidProbabilityCalibrationCurve,meanProbsWithError);
-calibratedMeanProbs=sigfunc(parametersForSigmoidProbabilityCalibrationCurve,meanProbs);
+calibratedMeanProbsWithError=calibrateProbabilities(meanProbsWithError);
+calibratedMeanProbs=calibrateProbabilities(meanProbs);
 
 %% Generate spot count distribution based on the calibrated probabilities
 distributionSpotCount=sum(binornd(ones(size(calibratedMeanProbsWithError)),calibratedMeanProbsWithError),1);
