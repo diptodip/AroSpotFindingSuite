@@ -55,6 +55,10 @@ R=slice+gSpotSlice;
 G=slice;
 B=slice+bSpotSlice;
 
+<<<<<<< HEAD
 imagesc(cat(3,R,G,B))
+=======
+imagesc(cat(3,R,G,B));
+>>>>>>> spotFindingSuite_v2.5.1
 
 end

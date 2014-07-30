@@ -10,12 +10,15 @@ function [randStats,cumSumPrctiles]=calculateRandStats(dataMat_o)
 %       - calculate cumulative sum percentiles (cumSumPrctiles)
 %       - calculate the randStats which compare the cumSumPrctiles to
 %       cumSumPrctiles distribution from randomly generated 7x7 pixels.
+<<<<<<< HEAD
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
 %   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
 %
+=======
+>>>>>>> spotFindingSuite_v2.5.1
 %% ========================================================================
 [m,n,z]=size(dataMat_o);
 randTimes=1000;

@@ -7,12 +7,6 @@ function trainingSet=addStatsToTrainingSet(trainingSet,varargin)
 %   Description:
 %       - add new stats, such as delta stats, ratioSigmaXY and randStats to
 %       an exisiting trainingSet.
-%
-%   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
-%   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
-%   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
-%   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
-%
 %% ========================================================================
 % Adding the delta stats
 deltaStats=calculateDeltaStats(trainingSet.stats.dataMat);

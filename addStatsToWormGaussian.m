@@ -7,6 +7,7 @@ function worms=addStatsToWormGaussian(worms)
 %   Description:
 %       - add new stats, such as delta stats, ratioSigmaXY and randStats to
 %       an exisiting worms structure from wormGaussianFit.mat
+<<<<<<< HEAD
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
 %   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
@@ -16,6 +17,12 @@ function worms=addStatsToWormGaussian(worms)
 %% ========================================================================
 for j=1:length(worms)
 % Adding the delta stats
+=======
+%% ========================================================================
+for j=1:length(worms)
+% Adding the delta stats
+if ~isempty(worms{j}.spotDataVectors)
+>>>>>>> spotFindingSuite_v2.5.1
 deltaStats=calculateDeltaStats(worms{j}.spotDataVectors.dataMat);
 
 % Add the ratioSigmaXY
@@ -42,6 +49,10 @@ end
 
 worms{j}.version='v2.5';
 end
+<<<<<<< HEAD
+=======
+end
+>>>>>>> spotFindingSuite_v2.5.1
 
 wormFileName=strrep(worms{1}.segStackFile,'_SegStacks.mat','_wormGaussianFit.mat');
 save(wormFileName,'worms')

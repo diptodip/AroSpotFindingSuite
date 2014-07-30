@@ -20,6 +20,7 @@ function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %   Files generated:    trainingSet_{dye}_{probeName}.mat.
 %   Updates:
 %       - Built-in version check to make sure the new stats are added.
+%       - Fix a bug that introduces mismatches of stats and spotInfo.
 %       
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
@@ -97,6 +98,14 @@ for wi=1:wormNum
     end
     if ~doAnotherWorm
         break
+<<<<<<< HEAD
+=======
+    else %doAnotherWorm
+        disp(['# good spots: ' num2str(length(goodSpots)) ' # bad spots: ' num2str(length(badSpots))]);
+        if wi==wormNum
+            disp('No more worms to do in this image!');
+        end;
+>>>>>>> spotFindingSuite_v2.5.1
     end;
 end
 clear segStacks
@@ -113,9 +122,14 @@ trainingSet.stats=struct;
 % Add stats info to training set
 fieldsToAdd=fields(worms{1}.spotDataVectors);
 for fta=1:length(fieldsToAdd)
+    for k=1:2
     for wi=1:length(worms)
         wormData=worms{wi};
-        wormIndex=(trainingSet.spotInfo(:,2)==wi);
+        if k==1
+            wormIndex=(trainingSet.spotInfo(:,2)==wi & trainingSet.spotInfo(:,end)==1);
+        else
+            wormIndex=(trainingSet.spotInfo(:,2)==wi & trainingSet.spotInfo(:,end)==0);
+        end
         spotIndex=(trainingSet.spotInfo(wormIndex,3));
         if ~sum(strcmp(fieldsToAdd{fta},{'spotInfoNumberInWorm','nucLocation','distanceToNuc'}))
             if ~isfield(trainingSet.stats, fieldsToAdd{fta})
@@ -132,6 +146,7 @@ for fta=1:length(fieldsToAdd)
                 end
             end
         end
+    end
     end
     
 end

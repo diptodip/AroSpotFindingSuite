@@ -68,9 +68,14 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %       - 2013 Mar 19th, small bug fixes
 %       - 2013 May 19th, fix 'index exceeds matrix' problem caused by
 %       including 'edge spots'.
+<<<<<<< HEAD
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
 %   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+=======
+%   Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
+%   License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+>>>>>>> spotFindingSuite_v2.5.1
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
 %
@@ -149,11 +154,22 @@ handles.spotsCurated=[];
 %the code from saveSpotPictures
 
 if isempty(varargin)
-    stackName=input('Please enter the stack name (e.g. tmr001.stk, tmr_Pos1.tif, tmr_001):','s');
-else
+    stackName=input('Please enter the stack name (e.g. tmr001.stk, tmr_Pos1.tif, tmr_001):\n','s');
+    findTraining=input('Are you using a training set derived from this batch of data? [yes[1]/no[0]]\n ');
+elseif length(varargin)==1
     stackName=varargin{1};
+    findTraining=1;
+else   
+    stackName=varargin{1};
+    findTraining=varargin{2};
 end
+
+if ~findTraining
+    trainingSet.sameBatchFlag=zeros(length(trainingSet.spotInfo),1);
+end
+
 [dye, stackSuffix, wormGaussianFitName, segStacksName,spotStatsFileName]=parseStackNames(stackName);
+handles.findTraining=findTraining;
 handles.dye=dye;
 handles.stackSuffix=stackSuffix;
 handles.posNum=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
@@ -411,6 +427,8 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%disp('in OutputFcn');
+
 % Get default command line output from handles structure
 
 varargout{1} = handles.output;
@@ -436,6 +454,8 @@ switch button
                 save(wormGaussianFitName,'worms');
                 spotStats=handles.spotStats;
                 save(spotStatsFileName,'spotStats');
+                disp(spotStats{1});
+                disp(spotStatsFileName);
                 delete(handles.figure1)
         end
         
@@ -447,6 +467,7 @@ switch button
         worms=handles.worms;
         save(wormGaussianFitName,'worms');
         spotStats=handles.spotStats;
+        %disp(spotStats{1});
         save(spotStatsFileName,'spotStats');
         delete(handles.figure1)
         disp('Rerunning randomForest with the latest amendments');
@@ -455,6 +476,7 @@ switch button
         handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
         
 end
+disp('output fcn done');
 %pos_size = get(handles.figure1,'Position');
 
 
@@ -511,7 +533,11 @@ if currentSpotClassification(3)~=1
     if currentSpotClassification(1)~=-1
         disp('This spot already was manually marked as bad and now we are changing it to good');
         handles.allLocs(handles.iCurrentSpot_allLocs,4)=1;
-        [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        if handles.findTraining
+            [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        else
+            iCurrentSpot_trainingSet=[];
+        end
         if isempty(iCurrentSpot_trainingSet) % not in the training set
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
@@ -562,7 +588,11 @@ if currentSpotClassification(3)~=0
     
     if currentSpotClassification(1)~=-1
         disp('This spot already was manually marked as bad and now we are changing it to good');
-        [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        if handles.findTraining
+            [~,~,iCurrentSpot_trainingSet]=intersect(newSpotRow(1:3),handles.trainingSet.spotInfo(:,1:3),'rows'); %Check to see if the spot is in the training set
+        else
+            iCurrentSpot_trainingSet=[];
+        end
         if isempty(iCurrentSpot_trainingSet) % not in the training set
             disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
         else
@@ -619,29 +649,32 @@ function done_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.spotStats{handles.iCurrentWorm}.spotsFixed=1;
-handles.spotStats{handles.iCurrentWorm}=updateSpotStats(handles.spotStats{handles.iCurrentWorm});
-if handles.iCurrentWorm<length(handles.worms)
-    handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
-    while ~handles.worms{handles.iCurrentWorm}.goodWorm%if the worm is bad
-        handles.iCurrentWorm=handles.iCurrentWorm+1;%go to the next worm
+data=guidata(hObject);
+
+data.spotStats{data.iCurrentWorm}.spotsFixed=1;
+data.spotStats{data.iCurrentWorm}=updateSpotStats(data.spotStats{data.iCurrentWorm});
+set(data.arrowSpot_button,'Value',1)
+guidata(hObject,data);
+if data.iCurrentWorm<length(data.worms)
+    data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
+    while ~data.worms{data.iCurrentWorm}.goodWorm%if the worm is bad
+        data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
     end
-    if ~isfield(handles.worms{handles.iCurrentWorm},'spotsFixed')
-        handles.worms{handles.iCurrentWorm}.spotsFixed=0;
+    if ~isfield(data.worms{data.iCurrentWorm},'spotsFixed')
+        data.worms{data.iCurrentWorm}.spotsFixed=0;
     end
-    set(handles.fileName_button,'Value',handles.worms{handles.iCurrentWorm}.spotsFixed);
+    set(data.fileName_button,'Value',data.worms{data.iCurrentWorm}.spotsFixed);
     
-    handles=drawTheLeftPlane(handles);
+    data=drawTheLeftPlane(data);
     
-    nGood=sum(handles.allLocs(:,5));
-    guidata(hObject, handles);
+    nGood=sum(data.allLocs(:,5));
+    guidata(hObject, data);
     
 else%then completely done-write training set and new spotFile,  21April2011 and goldSpots and rejectedSpots files
+    
     uiresume(gcbf);
 end
-set(handles.arrowSpot_button,'Value',1)
-guidata(hObject,handles);
-displayImFull(hObject,handles,0);
+displayImFull(hObject,data,0);
 
 % --- Executes on mouse press over axes background.
 function spotResults_ButtonDownFcn(currhandle, eventdata)
@@ -968,7 +1001,8 @@ function allDone_button_Callback(hObject, eventdata, handles)
 
 handles.spotStats{handles.iCurrentWorm}.spotsFixed=1;
 handles.spotStats{handles.iCurrentWorm}=updateSpotStats(handles.spotStats{handles.iCurrentWorm});
-
+%SAR - 30June2014 Added the following line
+guidata(hObject,handles);
 uiresume(gcbf);
 
 
@@ -1173,7 +1207,11 @@ for si=1:nSpots%size(handles.goodOutlines,1)
         % Check and see if the spot is in the training set. If it's in the
         % trainingSet, draw a cross
         spotInfo=[handles.posNum, handles.iCurrentWorm, handles.allLocs(si,6)];
-        [~,~,trainingSetIndex]=intersect(spotInfo, handles.trainingSet.spotInfo(:,1:3),'rows');
+        if handles.findTraining
+            [~,~,trainingSetIndex]=intersect(spotInfo, handles.trainingSet.spotInfo(:,1:3),'rows');
+        else
+            trainingSetIndex=[];
+        end
         if ~isempty(trainingSetIndex) % order is the same as allLocs
             handles.trainingSetIndex(si)=trainingSetIndex;
             if handles.allLocs(si,5) ==1 % good spot in training set
@@ -1184,7 +1222,7 @@ for si=1:nSpots%size(handles.goodOutlines,1)
             %handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.goodOutlines(si,1)+1,handles.goodOutlines(si,1)+handles.spotSize(1)-1],'Ydata',[handles.goodOutlines(si,2)+1,handles.goodOutlines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.outLines(si,1)+handles.spotSize(1)-1,handles.outLines(si,1)+1],'Ydata',[handles.outLines(si,2)+1,handles.outLines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             
-        end
-    end
+        end 
+     end
     iRH=iRH+1;
 end

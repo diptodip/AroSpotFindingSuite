@@ -1,7 +1,7 @@
 function spotStats=classifySpots(worms,varargin)
 %% ========================================================================
 %   Name:       classifySpots.m
-%   Version:    2.5, 25th Apr. 2013
+%   Version:    2.5.1, 23rd Jul. 2014
 %   Author:     Allison Wu
 %   Command:    spotStats=classifySpots(worms,trainingSet*) *Optional Input
 %   Description: classify the spots using the trained classifier
@@ -32,6 +32,7 @@ function spotStats=classifySpots(worms,varargin)
 %   Files generated: {dye}_{stackSuffix}_spotStats.mat
 %
 %   Updates:
+%       - 2014.07.23 : new prediction interval.
 %       - add in version check to detect older version.  If detected, new
 %       stats will be calculated and added.
 %       - update the way of spot number estimation.
@@ -103,6 +104,8 @@ if ~isempty(worms)
         tic
         
         fprintf('Doing worm %d ...\n',wi)
+        if ~isempty(worms{wi}.spotDataVectors)
+
         spotNum=length(worms{wi}.spotDataVectors.rawValue);
         allDataCenter=repmat(trainingSet.allDataCenter,[spotNum,1]);
         % Need to add in SVD stats.
@@ -118,7 +121,7 @@ if ~isempty(worms)
             dataMatrix(:,j)=worms{wi}.spotDataVectors.(statsToUse{j});
         end
         spotStats{wi}.dataMatrix=dataMatrix;
-        % Classify spots
+        %% Run each spot down each tree
         disp('Running each spot through each tree and calculate the probabilities...')
         spotTreeProbs=zeros(spotNum,length(Trees));
         for n=1:length(Trees)
@@ -127,25 +130,21 @@ if ~isempty(worms)
             spotTreeProbs(:,n)=ClassProbs(:,2);
         end
         
+        
+        %% Automatically classify the spot based on calibrated probabilities
+        load parametersForSigmoidProbabilityCalibrationCurve
+        sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
+        
         spotStats{wi}.spotTreeProbs=spotTreeProbs;
-        Probs=mean(spotTreeProbs,2);
-        IQR=iqr(spotTreeProbs,2);
-        IQRt=trainingSet.RF.IQRthreshold;
+        Probs=sigfunc(parametersForSigmoidProbabilityCalibrationCurve,mean(spotTreeProbs,2));
         spotStats{wi}.ProbEstimates=Probs;
         
-        [g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
-  
-        ub=sum(Probs>0.5)+b2g;
-        lb=sum(Probs>0.5)-g2b;
-        spotStats{wi}.SpotNumRange=[lb ub];
-        
-        spotStats{wi}.SpotNumEstimate=sum(Probs>0.5);
-        spotStats{wi}.quantile=trainingSet.RF.quantile;
-        spotStats{wi}.Margin=abs(Probs*2-1);
-        spotStats{wi}.IQR=IQR;
-        spotStats{wi}.UnreliablePortion=mean(IQR>IQRt);
-        
-        %spotStats{wi}.classification=[manual,auto,final]
+        %% Resolve automatic-manual classification conflicts in favor of manual classification
+        % => spotStats{wi}.classification columns:  (#1) -1 if not manually
+        % correccted, 0 if manually corrected bad, 1 if manually corrected
+        % good.  (#2)  automatic classification based on calibrated
+        % probability.  (#3) final classification with manual having
+        % precedence
         spotStats{wi}.classification=zeros(spotNum,3);
         spotStats{wi}.classification(:,1)=-1; % won't be -1 if manually corrected.
         spotStats{wi}.classification(:,2)=Probs>0.5;
@@ -163,20 +162,41 @@ if ~isempty(worms)
         % Check if the manual classification doesn't agree with the auto
         % classification.  Use the manual classification if they don't agree
         % with each other.
-        manualIndex=spotStats{wi}.classification(:,1)~=-1;
-        diffIndex=spotStats{wi}.classification(:,1)~=spotStats{wi}.classification(:,2);
-        index=(manualIndex+diffIndex)==2;
-        spotStats{wi}.classification(:,3)=spotStats{wi}.classification(:,2);
-        spotStats{wi}.classification(index,3)=spotStats{wi}.classification(index,1);
+        manualIndex=spotStats{wi}.classification(:,1)~=-1;%manually corrected
+        diffIndex=spotStats{wi}.classification(:,1)~=spotStats{wi}.classification(:,2);%either automatically classified (:,1)=-1) or manual~=automatic
+        index=(manualIndex+diffIndex)==2; %manually corrected and manual~=automatic
+        spotStats{wi}.classification(:,3)=spotStats{wi}.classification(:,2); %assign column 3 to automatic
+        spotStats{wi}.classification(index,3)=spotStats{wi}.classification(index,1); %assign column 3 to manual where manual ~= automatic
         if sum(index)~=0
             fprintf('%d spots out of  %d manually curated spots were classified incorrectly.\n', sum(index),sum(manualIndex))
             spotStats{wi}.msg=[ num2str(sum(index)) ' spots out of ' num2str(sum(manualIndex))  ' manually curated spots were classified incorrectly.'];
         end
-        %spotStats{wi}.spotNumFinal=spotStats{wi}.SpotNumEstimate-;
-        toc
+        
+        %% Calculate spot count estimate and the interval estimate
+        spotStats{wi}.intervalWidth=95;
+        spotStats{wi}.SpotNumEstimate=sum(spotStats{wi}.classification(:,3)==1);
+        [lbub,dist,sne]=makeSpotCountInterval(spotStats{wi},'spotStats');
+        if sne~=spotStats{wi}.SpotNumEstimate
+            disp('Problem!: spot number estimate equality failure');
+            disp(sne);
+            disp(spotStats{wi}.SpotNumEstimate);
+        end;
+        spotStats{wi}.SpotNumRange=lbub;
+        spotStats{wi}.SpotNumDistribution=dist;
+        
+
+
+        
+        %% Final fields
         spotStats{wi}.trainingSetName=trainingSet.RF.FileName;
+        toc
+        
         
         spotStats{wi}.locAndClass=[worms{wi}.spotDataVectors.locationStack spotStats{wi}.classification(:,3)];
+        else
+            spotStats{wi}.noSpot=1;
+        end
+            
     end
     
     spotStatsName=[dye '_Pos' num2str(posNumber) '_spotStats.mat'];

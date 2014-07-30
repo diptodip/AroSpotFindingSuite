@@ -36,7 +36,7 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 
 versionName='v2.5';
 
-cutoffPercentile=70;
+cutoffPercentile=90;
 cutoffStatisticValue=.7;
 %cutoffPercentile=90; % for yeast data
 %cutoffStatisticValue=.5;
@@ -382,16 +382,18 @@ if exist(segStacksFileName,'file')
                 %disp(size(spotDataVectors.dataMat))
                 
                 % Remove all spots or rows that don't have stats evaluated
-                spotNum=length(spotDataVectors.rawValue);
-                statsToUse=fieldnames(spotDataVectors);
-                testData=zeros(spotNum,length(statsToUse));
-                
-                for stati=1:length(statsToUse)
-                    if ~sum(strcmp(statsToUse{stati},{'dataFit','dataMat'}))
-                        width=size(spotDataVectors.(statsToUse{stati}),2);
-                        testData(:,stati:(stati+width-1))=spotDataVectors.(statsToUse{stati});
+                if exist('spotDataVectors','var')
+                    spotNum=length(spotDataVectors.rawValue);
+                    statsToUse=fieldnames(spotDataVectors);
+                    testData=zeros(spotNum,length(statsToUse));
+                    
+                    for stati=1:length(statsToUse)
+                        if ~sum(strcmp(statsToUse{stati},{'dataFit','dataMat'}))
+                            width=size(spotDataVectors.(statsToUse{stati}),2);
+                            testData(:,stati:(stati+width-1))=spotDataVectors.(statsToUse{stati});
+                        end
                     end
-                end
+                
                 
                 % Make sure to remove spots that don't have stats evaluated.
                 zeroLines=(testData~=0);
@@ -410,6 +412,9 @@ if exist(segStacksFileName,'file')
                 
                 %add to the worm
                 worms{ci}.spotDataVectors=spotDataVectors;
+                else
+                    worms{ci}.spotDataVectors=[];
+                end
                 %worms{ci}.spotInfo=spotInfo;
                 clear('spotDataVectors');
                 

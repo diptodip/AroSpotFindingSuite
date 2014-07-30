@@ -33,12 +33,15 @@ function spotStatsFound=spotMapAndStats(spotStats,stack,mask,varargin)
 %       - spotStats.gSpotMapStack: a 3D double matrix (same size as the
 %       segmented image stack) with only 1 and 0 which specifies the
 %       location of each bad spot.
+<<<<<<< HEAD
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
 %   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
 %
+=======
+>>>>>>> spotFindingSuite_v2.5.1
 %% ========================================================================
 
 if isempty(varargin)
@@ -114,6 +117,10 @@ spotStatsFound.stack=stack; % Cropped image stack
 spotStatsFound.gSpotMapStack=gSpotMapStack; % good spot map
 spotStatsFound.bSpotMapStack=bSpotMapStack; % good spot map
 
+<<<<<<< HEAD
 visualizeSpotMap(gSpotMapStack,bSpotMapStack,stack)
+=======
+visualizeSpotMap(gSpotMapStack,bSpotMapStack,stack);
+>>>>>>> spotFindingSuite_v2.5.1
 
 end

@@ -16,12 +16,15 @@ function classifySpotsOnDirectory(varargin)
 %   Update Log: 
 %       - 2012.09.18 add in the dye input
 %       - 2013.03.27 small bug fixes.
+<<<<<<< HEAD
 %
 %   Attribution: Wu, AC-Y and SA Rifkin. spotFinding Suite version 2.5, 2013 [journal citation TBA]
 %   License: Creative Commons Attribution-ShareAlike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  Allison Wu < dblue0406 at gmail dot com >, Scott Rifkin < sarifkin at ucsd dot edu >
 %
+=======
+>>>>>>> spotFindingSuite_v2.5.1
 %% ========================================================================
 
 stacks=dir('*_wormGaussianFit.mat');
@@ -63,8 +66,10 @@ if trainingSetSpecified
                 dyeToDo={'tmr'};
             case {'cy5','cy'}
                 dyeToDo={'cy5','cy'};
+            case {'yfp'}
+                dyeToDo={'yfp'};
             case 'all'
-                dyeToDo={'alexa','a594','tmr','cy5','cy'};
+                dyeToDo={'alexa','a594','tmr','cy5','cy','yfp'};
         end
     end
 else
