@@ -10,7 +10,7 @@ function createSegmenttrans(positionIdentifier)
 %       - They are the input to createSegImages.m
 %       - Each segmenttrans file has a cell array called "currpolys"
 %       - currpolys contains the masks
-%
+%  
 %
 %   Files required:     tiff mask files
 %                       File name examples: Mask_Pos0.tif, Mask_Pos0_1.tif
