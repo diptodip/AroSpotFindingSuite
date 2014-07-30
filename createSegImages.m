@@ -10,7 +10,7 @@ function createSegImages(stackFileType,varargin)
 %       - Each segStacks.mat file has two cell arrays.
 %         One is segStacks,which saves all the segmented image stacks for each worm in each cell.
 %         The other is segMasks, which saves the mask matrix for each worm in each cell.
-%       - reSize: the scale you want to resize your image. (if it's 0-1, it
+%       - varagin has two potential arguments: reSize: the scale you want to resize your image. (if it's 0-1, it
 %       shrinks the image.)
 %
 %   Files required:     stk or tiff image stacks, segmenttrans_{stackSuffix}.mat, metaInfo.mat (for tif)
@@ -47,21 +47,25 @@ if strcmp(stackFileType,'stk')
     
 elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
     d = dir('*_*.tif');
-    for k=1:length(d)
-        nameSplit=regexp(d(k).name,'_','split');
-        tmp{k}=nameSplit{1};
-    end
-    tmp=unique(tmp);
-    
-    j = 1;k=1;
-    while j<=length(tmp) 
-        if ~sum(strcmpi(tmp(j),{'segment','thumbs','gfp','trans'}))  %these are "special"
-            dye{k} = tmp{j};
-            k=k+1;
+    if ~isempty(d)
+        tmp={length(d),1};
+        for k=1:length(d)
+            nameSplit=regexp(d(k).name,'_','split');
+            tmp{k}=nameSplit{1};
         end
-            j = j+1;
-    end;    
-    
+        tmp=unique(tmp);
+
+        j = 1;k=1;
+        while j<=length(tmp) 
+            if ~sum(strcmpi(tmp(j),{'segment','thumbs','gfp','trans'}))  %these are "special"
+                dye{k} = tmp{j};
+                k=k+1;
+            end
+                j = j+1;
+        end;    
+    else
+        disp(['Length of d is 0 (no tiffs) in ' pwd]);
+    end;
 end;
 
 dye=sort(dye);
@@ -94,7 +98,7 @@ for i=1:length(stacks)
         segStackFileName=[dye{di} '_' stackSuffix '_SegStacks.mat'];
         disp(stackSuffix);
         
-        if ~exist(segStackFileName,'file') %cy5_Pos0_segStacks.mat
+        if ~exist(segStackFileName,'file') %e.g. cy5_Pos0_segStacks.mat % don't overWrite
             fprintf('Creating %s segStacks of %s ....\n',dye{di},stackSuffix);
             tic
             fprintf('Dye %s: \n',dye{di})
@@ -150,7 +154,7 @@ for i=1:length(stacks)
             
             
         else
-            fprintf('%s segStacks of %s is already saved.\n', dye{di},stackSuffix)
+            fprintf('%s is already made and saved.\n', segStackFileName)
             
         end
         fprintf('\n')
