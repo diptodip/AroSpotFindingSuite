@@ -6,12 +6,12 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %   Command: trainingSet=trainRFClassifier(trainingSet,outputSuffix*)
 %   Description: train and generate a random forest with the training set of size N.
 %       - Needs to load in a trainingSet_{suffix}.mat first.
-%       - You can specify the name of the output training set file by specifying the suffix=varargin{1}.  
+%       - You can specify the name of the output training set file by specifying the suffix=varargin{1}.
 %         However, by default, it detects the suffix of the file name of the trainingSet mat file where this trainingSet is
 %         loaded from and it will overwrite the original trainingSet_{suffix}.mat file.
 %       - Each tree in the forest uses "Deviance" as the splitcriterion.
 %       - Find and leave out unimportant variables:
-%               * All the variables with the VarImp (Variable Importance) 
+%               * All the variables with the VarImp (Variable Importance)
 %                 < VarImpThreshold are left out.
 %               * The names of variables that are left out are saved in
 %               trainingSet.RF.VarLeftOut.  Those of variables that are
@@ -48,15 +48,15 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %       - All the trees are saved in {suffix}_RF.mat
 %
 %   Files required: trainingSet structure variable loaded from trainingSet_{dye}_{probeName}.mat
-%   Files generated: 
+%   Files generated:
 %       trainingSet with RF field added
 %       trainingSet_{suffix}.mat
 %       {suffix}_Train_ProbsIQR.fig - plots the Probability v.s. IQR scatter plot
 %       {suffix}_RF.mat
 %   Updates:
-%       2013 Apr. 17th: 
+%       2013 Apr. 17th:
 %           - do not show the Prob_IQR figure so that it won't interfere with reviewFISHClassification
-%       2013 Apr. 25th: 
+%       2013 Apr. 25th:
 %           - add in the new method to determine the spotNumEstimate and spotNumRange.
 %           - built-in version check to add in new stats needed for this version.
 %       2013 May 7th:
@@ -135,7 +135,7 @@ trainingSet.RF.dataMatrixUsed=trainSetData.X;
 disp('Looking for the optimal number of features to sample....')
 nTreeTry=500;
 improve=0.01;
-stepFactor=1; 
+stepFactor=1;
 M=sum(VarImp>threshold);
 mStart=floor(sqrt(M));
 oobErrors=zeros(ceil(M-0.5*mStart)-mStart,2);
@@ -158,7 +158,7 @@ while m<ceil(M-0.5*mStart)
         if Improve>=improve
             errorOld=errorCurr;
             mBest=m;
-        end        
+        end
     end
     
     oobErrors(k,:)=[m,errorCurr];
@@ -173,7 +173,7 @@ fprintf('The best number of variables to sample: %d . \n',mBest)
 
 
 
-% Calculate the class probabilities at each leaf node in each decision tree.
+%% Calculate the class probabilities at each leaf node in each decision tree.
 fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n', ntrees, mBest)
 %RF=TreeBagger(ntrees,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',mBest,'names',trainingSet.RF.statsUsed,'splitcriterion','twoing');
 %cRF=compact(RF);
@@ -198,10 +198,13 @@ for n=1:ntrees
     spotTreeProbs(:,n)=ClassProbs(:,2);
     Trees{n}=t;
 end
-load A
+
+
+%% Calibrate the probabilities
+load parametersForSigmoidProbabilityCalibrationCurve
 sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
-Probs=sigfunc(A,mean(spotTreeProbs,2));
+Probs=sigfunc(parametersForSigmoidProbabilityCalibrationCurve,mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
 save(fullfile(pwd,[suffix '_RF.mat']),'Trees');
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
@@ -209,24 +212,28 @@ trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
 trainingSet.RF.ProbEstimates=Probs;
-randP=binornd(1,repmat(Probs,1,1000),length(Probs),1000);
-ub=prctile(sum(randP),97.5);
-lb=prctile(sum(randP),2.5);
 
-trainingSet.RF.SpotNumRange=[lb ub];
+%% Make interval estimate
+trainingSet.RF.intervalWidth=95;
+[lbub,dist,~]=makeSpotCountInterval(trainingSet.RF,'trainingSet');
+trainingSet.RF.SpotNumRange=lbub;
+trainingSet.RF.SpotNumDistribution=dist;
+
+%% Include other fields
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
 trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
-trainingSet.RF.concordantErrorRate=mean(trainingSet.RF.ResponseY(IQR<0.3)~=trainSetData.Y(IQR<0.3));
 
-% version check
+%% version check
 if isfield(trainingSet.RF,'UnreliablePortion')
-    rmfield(trainingSet.RF,'UnreliablePortion');
+    trainingSet.RF=rmfield(trainingSet.RF,'UnreliablePortion');
 end
 if isfield(trainingSet.RF,'reliableErrorRate')
-    rmfield(trainingSet.RF,'reliableErrorRate');
+    trainingSet.RF=rmfield(trainingSet.RF,'reliableErrorRate');
 end
 
+
+%% Save the training set
 save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet')
 fprintf('Finished training the random forest in %g minutes.\n', toc/60)
 
