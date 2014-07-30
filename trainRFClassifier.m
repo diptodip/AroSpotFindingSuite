@@ -1,7 +1,7 @@
 function trainingSet=trainRFClassifier(trainingSet,varargin)
 %% ============================================================
 %   Name:       traingRFClassifier.m
-%   Version:    2.5.2, 25th Apr. 2013
+%   Version:    2.5.3, 29th Jul. 2014
 %   Author:     Allison Wu
 %   Command: trainingSet=trainRFClassifier(trainingSet,outputSuffix*)
 %   Description: train and generate a random forest with the training set of size N.
@@ -68,6 +68,9 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %           - bug fixes to avoid generating trees with only one node.
 %       2013 July 16th:
 %           - change reliable to concordant, unreliable to discordant
+%       2014 July 29th:
+%           - use calibrated probability estimates for prediction interval
+%           estimation.
 %% =============================================================
 tic
 parameters
@@ -98,13 +101,12 @@ if isfield(trainingSet,'RF')
 end
 
 % Check if new stats are added.
-if ~strfind(trainingSet.version, 'ver. 2.5')
+if isempty(strfind(trainingSet.version, 'ver. 2.5'))
     display('Detect an older version. Update the trainingSet with new stats.')
     trainingSet=addStatsToTrainingSet(trainingSet);
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
 end
-
 
 trainingSet.RF.Version='New method of estimating spot numbers, Apr. 2013';
 spotNum=length(trainingSet.spotInfo);
@@ -196,29 +198,20 @@ for n=1:ntrees
     spotTreeProbs(:,n)=ClassProbs(:,2);
     Trees{n}=t;
 end
-IQRt=0.3;
-IQR=iqr(spotTreeProbs,2);
-%spotTreeProbs(IQR>IQRt,:)=spotTreeProbs_corr(IQR>IQRt,:);
+load A
+sigfunc=@(A,x)(1./(1+exp(-x*A(1)+A(2))));
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
-Probs=mean(spotTreeProbs,2);
+Probs=sigfunc(A,mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
-
 save(fullfile(pwd,[suffix '_RF.mat']),'Trees');
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
-
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
-trainingSet.RF.MSE=mean((trainingSet.RF.ProbEstimates-trainSetData.Y).^2);
-trainingSet.RF.IQR=IQR;
-trainingSet.RF.IQRthreshold=IQRt;
-trainingSet.RF.discordantPortion=mean(IQR>IQRt);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
-trainingSet.RF.quantile=75; 
-
-[g2b b2g]=calculateErrorRange(Probs, IQR, IQRt,trainingSet.RF.quantile);
-
-ub=sum(Probs>0.5)+b2g;
-lb=sum(Probs>0.5)-g2b;
+trainingSet.RF.ProbEstimates=Probs;
+randP=binornd(1,repmat(Probs,1,1000),length(Probs),1000);
+ub=prctile(sum(randP),97.5);
+lb=prctile(sum(randP),2.5);
 
 trainingSet.RF.SpotNumRange=[lb ub];
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
@@ -233,19 +226,6 @@ end
 if isfield(trainingSet.RF,'reliableErrorRate')
     rmfield(trainingSet.RF,'reliableErrorRate');
 end
-
-
-
-h=figure('Visible','off');
-scatter(Probs(trainSetData.Y~=1),IQR(trainSetData.Y~=1),'.','blue')
-hold on
-scatter(Probs(trainSetData.Y==1),IQR(trainSetData.Y==1),'.','red')
-xlabel('Prob Estimates')
-ylabel('IQR of Prob Estimates')
-title('Training Set')
-saveas(h,fullfile(pwd,[suffix '_Train_ProbsIQR.png']))
-close(h)
-
 
 save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet')
 fprintf('Finished training the random forest in %g minutes.\n', toc/60)
