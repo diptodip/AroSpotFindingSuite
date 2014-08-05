@@ -28,7 +28,7 @@ width=spotStatsOrTrainingSetRF.intervalWidth;
 if strcmp(type,'spotStats')
     manuallyCurated=spotStatsOrTrainingSetRF.classification(:,1)~=-1;
 else
-    manuallyCurated=zeros(size(spotStatsOrTrainingSetRF.spotTreeProbs,1));
+    manuallyCurated=zeros(size(spotStatsOrTrainingSetRF.spotTreeProbs,1),1);
 end;
 
 %% Calculate the mean probabilities and the standard deviations
