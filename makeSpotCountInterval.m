@@ -50,7 +50,7 @@ end;
 lbub=[prctile(distributionSpotCount,(100-width)/2),prctile(distributionSpotCount,(100-(100-width)/2))];
 
 %% Calculate the spot number estimate, taking into account manual classification if necessary
-spotNumEstimate=sum(calibratedMeanProbs(~manuallyCurated)>.5);
+spotNumEstimate=sum(calibratedMeanProbs>.5);
 if sum(manuallyCurated)>0
     disp(sum(manuallyCurated));
     spotNumEstimate=spotNumEstimate+sum(spotStatsOrTrainingSetRF.classification(manuallyCurated,1)==1);

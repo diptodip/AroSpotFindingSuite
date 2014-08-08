@@ -108,6 +108,8 @@ if isempty(strfind(trainingSet.version, 'ver. 2.5'))
     suffix=strrep(suffix,'.mat','');
 end
 
+disp(['Suffix is: ' suffix]);
+
 trainingSet.RF.Version='New method of estimating spot numbers, Apr. 2013';
 spotNum=length(trainingSet.spotInfo);
 trainingSet.RF.nTrees=ntrees;
@@ -205,8 +207,11 @@ end
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
 Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
-save(fullfile(pwd,[suffix '_RF.mat']),'Trees');
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
+save(fullfile('~/Desktop',trainingSet.RF.RFfileName),'Trees','-v7.3');
+disp('saved to desktop');
+save(fullfile(pwd,[suffix '_RF.mat']),'Trees','-v7.3');
+disp('saved to actual directory');
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
@@ -233,7 +238,7 @@ end
 
 
 %% Save the training set
-save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet')
+save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet','-v7.3')
 fprintf('Finished training the random forest in %g minutes.\n', toc/60)
 
 end

@@ -257,7 +257,7 @@ set(data.nRejectedToGood_txt,'String',[num2str(data.nRejectedToGood) ' rejected 
 set(data.nGoodSpots_txt,'String',[num2str(sum(data.allLocs(:,5))) ' good spots']);
 set(data.nRejectedSpots_txt,'String',[num2str(sum(data.allLocs(:,5)~=1)) ' rejected spots']);
 set(data.iCurrentWorm_txt,'String',['Worm: ' num2str(data.iCurrentWorm) ' of ' num2str(length(data.worms))]);
-set(data.RandomForestResult_txt,'String',['Probability Estimate: ' num2str(data.allLocs(data.iCurrentSpot_allLocs,7)*100) '%,  IQR : ' num2str(data.allLocs(data.iCurrentSpot_allLocs,end))]);
+set(data.RandomForestResult_txt,'String',['Probability Estimate: ' num2str(data.allLocs(data.iCurrentSpot_allLocs,7)*100) '%']);
 set(data.scdValue_txt,'String',['scd: ' num2str(data.worms{data.iCurrentWorm}.spotDataVectors.scd(data.iCurrentSpot_worms))]);
 
 set(data.iCurrentSpot_worms_txt,'String',['Index in worms: ' num2str(data.iCurrentSpot_worms)]);
@@ -1069,8 +1069,8 @@ allLocs=[];
 
 placeholder=-100;
 disp('making good/rejectedLocs')
-% [Location, classification (manual), classification (final), spot index, Prob Estimates, IQR]
-allLocs=[handles.worms{handles.iCurrentWorm}.spotDataVectors.locationStack handles.spotStats{handles.iCurrentWorm}.classification(:,1) handles.spotStats{handles.iCurrentWorm}.classification(:,3), handles.worms{handles.iCurrentWorm}.spotDataVectors.spotInfoNumberInWorm handles.spotStats{handles.iCurrentWorm}.ProbEstimates handles.spotStats{handles.iCurrentWorm}.IQR];
+% [Location, classification (manual), classification (final), spot index, Prob Estimates]
+allLocs=[handles.worms{handles.iCurrentWorm}.spotDataVectors.locationStack handles.spotStats{handles.iCurrentWorm}.classification(:,1) handles.spotStats{handles.iCurrentWorm}.classification(:,3), handles.worms{handles.iCurrentWorm}.spotDataVectors.spotInfoNumberInWorm handles.spotStats{handles.iCurrentWorm}.ProbEstimates];
 [allLocs,I]=sortrows(allLocs,-7); % sort the spots based on probability estimates
 allDataMat=handles.worms{handles.iCurrentWorm}.spotDataVectors.dataMat(I,:,:);
 nSpots=size(allLocs,1);
