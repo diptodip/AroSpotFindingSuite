@@ -36,13 +36,15 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %               * Bad worm toggle button. $
 %                       > If you don't like the looks of the specimen, flag it as bad and move on.
 %               * Click 'Good Spot' button
-%                       > If you're on a good spot:  this spot will be added to the training set. (With a light blue cross)
+%                       > If you're on a good spot:  this spot will be added to the training set. (With a light blue X)
 %                       > If you're on a bad spot: this spot will be curated to a good spot but it will not be added to the training set. (With a single light blue slash)
 %               * Click 'Not a Spot' button
-%                       > If you're on a bad spot:  this spot will be added to the training set. (With a light blue cross)
+%                       > If you're on a bad spot:  this spot will be added to the training set. (With a light blue X)
 %                       > If you're on a good spot: this spot will be curated to a bad spot but it will not be added to the training set. (With a single light blue slash)
 %               * Click 'Add to training set' button
 %                       > Add the spot to the training set without changing the classification.
+%               * Toggle add corrected spot to trainingSet (On) or Not (off, default)
+%                       > Changes the behavior of the 'Good Spot' and 'Not a Spot' buttons to add to training set in addition to correcting (light blue X).             
 %               * Scrollbar under the right image $
 %                       > Change the zoom of the right image.  The number under it displays the current zoom
 %               * Click 'Undo the Last Spot' button:
@@ -106,7 +108,7 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 
 % Edit the above text to modify the response to help reviewFISHClassification       %nameMod
 
-% Last Modified by GUIDE v2.5 11-Jul-2012 10:34:10
+% Last Modified by GUIDE v2.5 08-Aug-2014 15:03:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -517,7 +519,7 @@ handles.allLocs(handles.iCurrentSpot_allLocs,5)=1;
 rectposition=get(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'Position');
 newSpotRow=[handles.posNum handles.iCurrentWorm handles.iCurrentSpot_worms 1];
 handles.spotsCurated=[handles.spotsCurated;[newSpotRow currentSpotClassification(3)]];
-if currentSpotClassification(3)~=1
+if currentSpotClassification(3)~=1%it was not manually marked as good
     disp(sprintf('Accepting rejected spot %d',handles.iCurrentSpot_worms));
     handles.nRejectedToGood=handles.nRejectedToGood+1;
     %modify image
@@ -539,8 +541,11 @@ if currentSpotClassification(3)~=1
             
         end
         
-    end
-    
+    elseif get(handles.addCorrToTS_button,'Value') %it is a bad spot but was not manually marked as good and add corrections to training set button is on
+        handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
+        disp('This spot is added into the training set.')
+        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    end;
 else % It is already a good spot. Add to training set.
     disp('This spot is already classified as good spot.  Adding this spot into the training set....')
     handles.allLocs(handles.iCurrentSpot_allLocs,4)=1;
@@ -594,7 +599,11 @@ if currentSpotClassification(3)~=0
             
         end
         
-    end
+    elseif get(handles.addCorrToTS_button,'Value') %it is a bad spot but was not manually marked as good and add corrections to training set button is on
+        handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
+        disp('This spot is added into the training set.')
+        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    end;
     
 else % It is already a bad spot. Add to training set.
     disp('This spot is already classified as bad spot.  Adding this spot into the training set....')
@@ -1219,3 +1228,12 @@ for si=1:nSpots%size(handles.goodOutlines,1)
      end
     iRH=iRH+1;
 end
+
+
+% --- Executes on button press in addCorrToTS_button.
+function addCorrToTS_button_Callback(hObject, eventdata, handles)
+% hObject    handle to addCorrToTS_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of addCorrToTS_button
