@@ -1,9 +1,9 @@
 function trainingSet=trainRFClassifier(trainingSet,varargin)
 %% ============================================================
 %   Name:       traingRFClassifier.m
-%   Version:    2.5.3, 29th Jul. 2014
+%   Version:    2.5.4, 9 Aug. 2014
 %   Author:     Allison Wu
-%   Command: trainingSet=trainRFClassifier(trainingSet,outputSuffix*)
+%   Command: trainingSet=trainRFClassifier(trainingSet,suffix*,ntrees*,FBoot*,runVarFeatureSel*)
 %   Description: train and generate a random forest with the training set of size N.
 %       - Needs to load in a trainingSet_{suffix}.mat first.
 %       - You can specify the name of the output training set file by specifying the suffix=varargin{1}.
@@ -30,20 +30,12 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %               by each tree for each spot in the training set.
 %               * ProbEstimates: the averaged probability estimates among
 %               the decision trees.
-%               * IQR: interquantile range among probability estimates
-%               among trees for each spot.
-%               * IQRthreshold: 0.3 by default, any spot with
-%               IQR>IQRthreshold is defined as unreliable spots.
-%               * UnreliablePortion: the portion of unreliable spots in the
-%               data set.
 %               * SpotNumEstimate: estimate of the total number of spots
 %               (sum over the number of reliable good spots and the
 %               probability estimates of unreliable spots.)
 %               * SpotNumRange: estimated range of the total number of
 %               spots from randomization test with quantile range specified in quantileRange.
 %               * ErrorRate: training set error rate
-%               * reliableErrorRate: training set error rate among the
-%               reliable spots.
 %
 %       - All the trees are saved in {suffix}_RF.mat
 %
@@ -71,30 +63,30 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %       2014 July 29th:
 %           - use calibrated probability estimates for prediction interval
 %           estimation.
+%		2014 Aug 9th:
+%			- Changed input to param-value pairs. Added option to skip the variable and 
+%			feature selection to save time when in the middle of reviewFISHClassification
 %% =============================================================
 tic
 parameters
-if isempty(varargin)
-    ntrees=1000;
-    FBoot=1;
+p=inputParser;
+p.addRequired('trainingSet',@isstruct);
+p.addParamValue('suffix',[],@isstr);
+p.addParamValue('ntrees',1000,@isscalar);
+p.addParamValue('FBoot',1,@isscalar);
+p.addParamValue('runVarFeatureSel',1,@isscalar);
+p.parse(trainingSet,varargin{:});
+trainingSet=p.trainingSet;
+if isempty(p.suffix)
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
 else
-    switch length(varargin)
-        case 1
-            suffix=varargin{1};
-            ntrees=1000;
-            FBoot=1;
-        case 2
-            suffix=varargin{1};
-            ntrees=varargin{2};
-            FBoot=1;
-        case 3
-            suffix=varargin{1};
-            ntrees=varargin{2};
-            FBoot=varargin{3};
-    end
-end
+	suffix=p.suffix;
+end;
+ntrees=p.ntrees;
+FBoot=p.FBoot;
+runVarFeatureSel=p.runVarFeatureSel;
+clear p;
 
 if isfield(trainingSet,'RF')
     trainingSet=rmfield(trainingSet,'RF');
@@ -116,64 +108,70 @@ trainingSet.RF.nTrees=ntrees;
 trainingSet.RF.FBoot=FBoot;
 trainSetData.X=trainingSet.dataMatrix.X;
 trainSetData.Y=trainingSet.dataMatrix.Y;
-% Finding the variables that do not have much predicting power in this
-% training set...
-disp('Leaving out variables that are not important....')
-disp('Variables that are left out:')
 
-testRF=TreeBagger(1000,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'OOBVarImp','on','splitcriterion','deviance');
-VarImp=testRF.OOBPermutedVarDeltaError;
-threshold=prctile(VarImp,25);
-trainSetData.X=trainSetData.X(:,VarImp>threshold);
-trainingSet.RF.VarLeftOut=trainingSet.statsUsed(VarImp<threshold);
-trainingSet.statsUsed(VarImp<threshold)
-trainingSet.RF.statsUsed=trainingSet.statsUsed(VarImp>threshold);
-trainingSet.RF.VarImpThreshold=threshold;
-trainingSet.RF.VarImp=VarImp;
-trainingSet.RF.dataMatrixUsed=trainSetData.X;
+if runVarFeatureSel %if 0 this saves time (e.g. in the middle of reviewFISHClassification)
+	%% Variable selection
+	% Finding the variables that do not have much predicting power in this
+	% training set...
+	disp('Leaving out variables that are not important....')
+	disp('Variables that are left out:')
 
-% Find the opitmal number of features used to build each tree.
-% Modified based on tuneRF in R.
-disp('Looking for the optimal number of features to sample....')
-nTreeTry=500;
-improve=0.01;
-stepFactor=1;
-M=sum(VarImp>threshold);
-mStart=floor(sqrt(M));
-oobErrors=zeros(ceil(M-0.5*mStart)-mStart,2);
+	testRF=TreeBagger(1000,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'OOBVarImp','on','splitcriterion','deviance');
+	VarImp=testRF.OOBPermutedVarDeltaError;
+	threshold=prctile(VarImp,25);
+	trainSetData.X=trainSetData.X(:,VarImp>threshold);
+	trainingSet.RF.VarLeftOut=trainingSet.statsUsed(VarImp<threshold);
+	trainingSet.statsUsed(VarImp<threshold)
+	trainingSet.RF.statsUsed=trainingSet.statsUsed(VarImp>threshold);
+	trainingSet.RF.VarImpThreshold=threshold;
+	trainingSet.RF.VarImp=VarImp;
+	trainingSet.RF.dataMatrixUsed=trainSetData.X;
 
-m=mStart;
-k=1;
-errorOld=[];
-fprintf('NVarToSample \t OOB Error \t  Improve\n')
-while m<ceil(M-0.5*mStart)
-    testRF=TreeBagger(nTreeTry,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',m,'splitcriterion','deviance');
-    errorCurr=oobError(testRF,'mode','ensemble');
-    % 2014.05.18 test
-    %errorCurr
-    if isempty(errorOld)
-        errorOld=errorCurr;
-        mBest=m;
-        Improve=0;
-    else
-        Improve=1-errorCurr/errorOld;
-        if Improve>=improve
-            errorOld=errorCurr;
-            mBest=m;
-        end
-    end
-    
-    oobErrors(k,:)=[m,errorCurr];
-    fprintf('%g \t %g \t %g \n', m, errorCurr, Improve)
-    k=k+1;
-    m=m+stepFactor;
-end
-
-trainingSet.RF.mTryOOBError=oobErrors((oobErrors(:,1)~=0.*oobErrors(:,2)~=0),:);
-trainingSet.RF.NVarToSample=mBest;
-fprintf('The best number of variables to sample: %d . \n',mBest)
+	%% Choose the number of features
+	% Find the opitmal number of features used to build each tree.
+	% Modified based on tuneRF in R.
+	disp('Looking for the optimal number of features to sample....')
+	nTreeTry=500;
+	improve=0.01;
+	stepFactor=1;
+	M=sum(VarImp>threshold);
+	mStart=floor(sqrt(M));
+	oobErrors=zeros(ceil(M-0.5*mStart)-mStart,2);
 
 
+
+	m=mStart;
+	k=1;
+	errorOld=[];
+	fprintf('NVarToSample \t OOB Error \t  Improve\n')
+	while m<ceil(M-0.5*mStart)
+		testRF=TreeBagger(nTreeTry,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',m,'splitcriterion','deviance');
+		errorCurr=oobError(testRF,'mode','ensemble');
+		% 2014.05.18 test
+		%errorCurr
+		if isempty(errorOld)
+			errorOld=errorCurr;
+			mBest=m;
+			Improve=0;
+		else
+			Improve=1-errorCurr/errorOld;
+			if Improve>=improve
+				errorOld=errorCurr;
+				mBest=m;
+			end
+		end
+	
+		oobErrors(k,:)=[m,errorCurr];
+		fprintf('%g \t %g \t %g \n', m, errorCurr, Improve)
+		k=k+1;
+		m=m+stepFactor;
+	end
+
+	trainingSet.RF.mTryOOBError=oobErrors((oobErrors(:,1)~=0.*oobErrors(:,2)~=0),:);
+	trainingSet.RF.NVarToSample=mBest;
+	fprintf('The best number of variables to sample: %d . \n',mBest)
+end;
+%% Build the forest
 
 %% Calculate the class probabilities at each leaf node in each decision tree.
 fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n', ntrees, mBest)
@@ -208,10 +206,7 @@ trainingSet.RF.spotTreeProbs=spotTreeProbs;
 Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
-save(fullfile('~/Desktop',trainingSet.RF.RFfileName),'Trees','-v7.3');
-disp('saved to desktop');
 save(fullfile(pwd,[suffix '_RF.mat']),'Trees','-v7.3');
-disp('saved to actual directory');
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);

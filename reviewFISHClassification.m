@@ -1,7 +1,7 @@
 function varargout = reviewFISHClassification(varargin)  %nameMod
 %% =============================================================
 %   Name:    reviewFISHClassification.m
-%   Version: 2.5.1, 25th Apr. 2013
+%   Version: 2.5.4, 9th Aug. 2014
 %   Authors:  Allison Wu, Scott Rifkin
 %   Command:  reviewFISHClassification(stackName*) *Optional Input
 %   Description: reviewFISHClassification.m is a gui to browse the results of the spot finding algorithm, estimate and/or correct errors, and retraing the classifier if specified.
@@ -70,8 +70,9 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
 %       - 2013 Mar 19th, small bug fixes
 %       - 2013 May 19th, fix 'index exceeds matrix' problem caused by
 %       including 'edge spots'.
+%		- 2014 Aug 9th, make redo mach Learn button run faster by not choosing variables and nFeatures again
 %   Attribution: Rifkin SA., Identifying fluorescently labeled single molecules in image stacks using machine learning.  Methods Mol Biol. 2011;772:329-48.
-%   License: Creative Commons Attribution-Share Alike 3.0 United States, http://creativecommons.org/licenses/by-sa/3.0/us/
+%   License: Apache 2.0, http://www.apache.org/licenses
 %   Website: http://www.biology.ucsd.edu/labs/rifkin/software/spotFindingSuite
 %   Email for comments, questions, bugs, requests:  sarifkin at ucsd dot edu
 %% =============================================================
@@ -791,7 +792,7 @@ function redoMachLearn_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.trainingSet=trainRFClassifier(handles.trainingSet);  %nameMod
+handles.trainingSet=trainRFClassifier(handles.trainingSet,'runVarFeatureSel',0);  %use old variables and nFeatures
 handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
 handles.iCurrentWorm=1;
 
