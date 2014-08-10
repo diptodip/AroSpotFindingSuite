@@ -88,7 +88,7 @@ FBoot=p.Results.FBoot;
 runVarFeatureSel=p.Results.runVarFeatureSel;
 clear p;
 
-if isfield(trainingSet,'RF')
+if isfield(trainingSet,'RF') && runVarFeatureSel
     trainingSet=rmfield(trainingSet,'RF');
 end
 
@@ -170,11 +170,14 @@ if runVarFeatureSel %if 0 this saves time (e.g. in the middle of reviewFISHClass
 	trainingSet.RF.mTryOOBError=oobErrors((oobErrors(:,1)~=0.*oobErrors(:,2)~=0),:);
 	trainingSet.RF.NVarToSample=mBest;
 	fprintf('The best number of variables to sample: %d . \n',mBest)
+else%runVarFeatureSel==0
+	%Need to adjust the X data so that it just has the correct variables
+	trainSetData.X=trainSetData.X(:,trainingSet.RF.VarImp>trainingSet.RF.VarImpThreshold);
 end;
 %% Build the forest
 
 %% Calculate the class probabilities at each leaf node in each decision tree.
-fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n', ntrees, mBest)
+fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n', ntrees,trainingSet.RF.NVarToSample)
 %RF=TreeBagger(ntrees,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',trainingSet.RF.NVarToSample,'names',trainingSet.RF.statsUsed,'splitcriterion','twoing');
 %cRF=compact(RF);
 %plot(oobError(RF))
