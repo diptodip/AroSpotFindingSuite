@@ -76,16 +76,16 @@ p.addParamValue('ntrees',1000,@isscalar);
 p.addParamValue('FBoot',1,@isscalar);
 p.addParamValue('runVarFeatureSel',1,@isscalar);
 p.parse(trainingSet,varargin{:});
-trainingSet=p.trainingSet;
-if isempty(p.suffix)
+trainingSet=p.Results.trainingSet;
+if isempty(p.Results.suffix)
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
 else
-	suffix=p.suffix;
+	suffix=p.Results.suffix;
 end;
-ntrees=p.ntrees;
-FBoot=p.FBoot;
-runVarFeatureSel=p.runVarFeatureSel;
+ntrees=p.Results.ntrees;
+FBoot=p.Results.FBoot;
+runVarFeatureSel=p.Results.runVarFeatureSel;
 clear p;
 
 if isfield(trainingSet,'RF')
