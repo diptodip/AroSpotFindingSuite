@@ -68,7 +68,7 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %			feature selection to save time when in the middle of reviewFISHClassification
 %% =============================================================
 tic
-parameters
+RFparameters
 p=inputParser;
 p.addRequired('trainingSet',@isstruct);
 p.addParamValue('suffix',[],@isstr);
