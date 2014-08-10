@@ -175,7 +175,7 @@ end;
 
 %% Calculate the class probabilities at each leaf node in each decision tree.
 fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n', ntrees, mBest)
-%RF=TreeBagger(ntrees,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',mBest,'names',trainingSet.RF.statsUsed,'splitcriterion','twoing');
+%RF=TreeBagger(ntrees,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'oobpred','on','NVarToSample',trainingSet.RF.NVarToSample,'names',trainingSet.RF.statsUsed,'splitcriterion','twoing');
 %cRF=compact(RF);
 %plot(oobError(RF))
 %xlabel('# of Trees')
@@ -190,7 +190,7 @@ for n=1:ntrees
         BagIndex=randi(spotNum,1,spotNum)';
         X=trainSetData.X(BagIndex,:);
         Y=trainSetData.Y(BagIndex,:);
-        t=classregtree(X,Y,'nvartosample',mBest,'method','classification','splitcriterion','deviance');
+        t=classregtree(X,Y,'nvartosample',trainingSet.RF.NVarToSample,'method','classification','splitcriterion','deviance');
         nodeNum=numnodes(t); % Avoid generating trees with only one node.
     end
     [~,nodes]=eval(t,trainSetData.X);
