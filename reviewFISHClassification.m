@@ -371,7 +371,22 @@ xlim(get(data.figure_handle,'CurrentAxes'),[currentSpotX-data.offset(2) currentS
 ylim(get(data.figure_handle,'CurrentAxes'),[currentSpotY-data.offset(1) currentSpotY+data.offset(1)+1]);
 %%%%%%%%%%%%
 set(data.figure_handle,'CurrentAxes',data.spotZoomBkgdSub);
-dataMat=currentSlice(yToRow(currentSpotY)-data.offset(2):yToRow(currentSpotY)+data.offset(2),xToCol(currentSpotX)-data.offset(1):xToCol(currentSpotX)+data.offset(1));
+%Need the check wehther on edge
+rows=(yToRow(currentSpotY)-data.offset(2)):(yToRow(currentSpotY)+data.offset(2));
+cols=(xToCol(currentSpotX)-data.offset(1)):(xToCol(currentSpotX)+data.offset(1));
+if rows(1)<1
+    rows=rows+(1-rows(1));
+elseif rows(end)>size(currentSlice,1)
+    rows=rows-(rows(end)-size(currentSlice,1));
+end;
+if cols(1)<1
+    cols=cols+(1-cols(1));
+elseif cols(end)>size(currentSlice,2)
+    cols=cols-(cols(end)-size(currentSlice,2));
+end;
+
+
+dataMat=currentSlice(rows,cols);
 minDataMat=min(dataMat(:));
 scaledSlice=currentSlice-minDataMat;
 scaledSlice=scaledSlice.*(scaledSlice>0);
@@ -385,8 +400,8 @@ ylim(get(data.figure_handle,'CurrentAxes'),[currentSpotY-data.offset(1) currentS
 
 %%%%%%%%%%%%
 surfWidth=15;
-surfNR=max(1,yToRow(currentSpotY-floor(surfWidth/2)));
-surfWC=max(1,xToCol(currentSpotX-floor(surfWidth/2)));
+surfNR=max(1,rows(end)-surfWidth+1);
+surfWC=max(1,cols(end)-surfWidth+1);
 surfEC=surfWC+surfWidth-1;
 surfSR=surfNR+surfWidth-1;
 %fprintf('%d %d %d %d\n',surfWC,surfNR,surfEC,surfSR);
