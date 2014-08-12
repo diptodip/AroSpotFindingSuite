@@ -149,7 +149,7 @@ if ~isempty(worms)
         spotInfo=[ones(spotNum,1)*posNumber ones(spotNum,1)*wi worms{wi}.spotDataVectors.spotInfoNumberInWorm];
         [~,iTraining,iInWorm]=intersect(trainingSet.spotInfo(:,1:3),spotInfo,'rows');
         if ~isempty(iTraining)
-            fprintf('%d spots are already in the training set....\n',length(iTraining))
+            fprintf('%d spots in %s are already in the training set....\n',length(iTraining),[dye '_' num2str(posNumber)])
             spotStats{wi}.classification(iInWorm,1)=trainingSet.spotInfo(iTraining,4);
         end
         

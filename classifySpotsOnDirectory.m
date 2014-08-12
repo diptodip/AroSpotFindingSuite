@@ -61,6 +61,8 @@ if trainingSetSpecified
                 dyeToDo={'yfp'};
             case 'all'
                 dyeToDo={'alexa','a594','tmr','cy5','cy','yfp'};
+            case 'gold'
+                dyeToDo={'gold'};
         end
     end
 else
@@ -69,11 +71,11 @@ else
 end
 
 
-for i=1:length(stacks)
+parfor i=1:length(stacks)
     stackName=stacks(i).name;
     [dye, ~, ~, ~,spotStatsFileName]=parseStackNames(regexprep(stackName,'_wormGaussianFit.mat',''));
-    load(stacks(i).name)
-    
+    w=load(stacks(i).name)
+    worms=w.worms;
     if sum(strcmpi(dye,dyeToDo))~=0
         if toOverWrite
             fprintf('Doing %...\n', stacks(i).name)

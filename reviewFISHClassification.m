@@ -197,7 +197,7 @@ end
 disp('Training set loaded.');
 
 handles.wormImageMaxMerge={};
-for wi=1:size(handles.worms,2)
+for wi=1:length(handles.worms)
     %bb=regionprops(double(currpolys{wi}),'BoundingBox');
     %handles.wormBBs{wi}=bb.BoundingBox;
     
