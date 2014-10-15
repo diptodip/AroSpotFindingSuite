@@ -13,7 +13,7 @@ function [segStacks,bleachFactors]=correctBleachAndFilter(segStacks,varargin)
 h=size(segStacks{1},3); % Assuming all stacks are the same height
 %% Slice as reference
 wormNum=length(segStacks);
-iRefSlice=floor(h/2);
+iRefSlice=max(1,floor(h/2));
 bleachFactors=zeros(h,wormNum);
 
 if isempty(varargin)
