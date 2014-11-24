@@ -83,7 +83,7 @@ for zi=1:size(regMax,3)
 end;
 
 if length(sz)==2
-    varargout={spotRSorted,spotCSorted,spotVSorted,spotVFiltSorted};
+    varargout={spotRSorted,spotCSorted,1,spotVSorted,spotVFiltSorted};
 else
     varargout={spotRSorted,spotCSorted,spotZSorted,spotVSorted,spotVFiltSorted};
 end;
