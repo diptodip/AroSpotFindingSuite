@@ -112,7 +112,7 @@ goldNum=size(goldSpotsData,1);
 rejNum=size(rejectedSpotsData,1);
 spotNum=goldNum+rejNum;
 
-% [posNumber, wormNumber, spotIndex, classification]
+% spotInfo is: [posNumber, wormNumber, spotIndex, classification]
 trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)];
 trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)];
 trainingSet.stats=struct;
