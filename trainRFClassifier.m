@@ -187,6 +187,7 @@ fprintf('Generating a random forest with %d trees and NVarToSample = %d.... \n',
 trainingSet.RF.ProbEstimates=zeros(spotNum,1);
 spotTreeProbs=zeros(spotNum,ntrees);
 Trees=cell(ntrees,1);
+BagIndices=cell(ntrees,1);
 for n=1:ntrees
     nodeNum=1;
     while nodeNum==1
@@ -199,6 +200,7 @@ for n=1:ntrees
     [~,nodes]=eval(t,trainSetData.X);
     ClassProbs=classprob(t,nodes);
     spotTreeProbs(:,n)=ClassProbs(:,2);
+    BagIndices{n}=BagIndex;
     Trees{n}=t;
 end
 
@@ -209,7 +211,7 @@ trainingSet.RF.spotTreeProbs=spotTreeProbs;
 Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
 trainingSet.RF.RFfileName=[suffix '_RF.mat'];
-save(fullfile(pwd,[suffix '_RF.mat']),'Trees','-v7.3');
+save(fullfile(pwd,[suffix '_RF.mat']),'Trees','BagIndices','-v7.3');
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
@@ -225,6 +227,13 @@ trainingSet.RF.SpotNumDistribution=dist;
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
 trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
+
+%% Include and Process BagIndices for the Wager, Hastie, Efron conf interval estimate
+trainingSet.RF.BagIndices=BagIndices;
+trainingSet.RF.Nbi=zeros(spotNum,ntrees);
+for b=1:ntrees
+    trainingSet.RF.Nbi(:,b)=histc(BagIndices{b},1:spotNum);
+end;
 
 %% version check
 if isfield(trainingSet.RF,'UnreliablePortion')
