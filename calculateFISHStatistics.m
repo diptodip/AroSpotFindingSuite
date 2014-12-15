@@ -38,22 +38,37 @@ end;
 
 dataMat=dataColumn(:,:,iSlice);
 
+%% Setup adjacent slices 
 adjacentSlices=[];
-if iSlice>1
-    adjacentSlices=dataColumn(:,:,iSlice-1);
-end;
-if iSlice<size(dataColumn,3)
-    adjacentSlices=cat(3,adjacentSlices,dataColumn(:,:,iSlice+1));
-end;
-
 adjs=[];
-for adji=1:size(adjacentSlices,3)
-    sl=adjacentSlices(:,:,adji);
-    adjs=cat(3,adjs,sl(centerR,centerC)-min(sl(:)));
+% don't do this if there are only 1 or 2 slices
+if size(dataColumn,3)>=3
+    
+    if iSlice>1
+        adjacentSlices=dataColumn(:,:,iSlice-1);
+    end;
+    if iSlice<size(dataColumn,3)
+        adjacentSlices=cat(3,adjacentSlices,dataColumn(:,:,iSlice+1));
+    end;
+    
+    
+    for adji=1:size(adjacentSlices,3)
+        sl=adjacentSlices(:,:,adji);
+        adjs=cat(3,adjs,sl(centerR,centerC)-min(sl(:)));
+    end;
+else
+    disp(['******* Warning!  You only have ' num2str(size(dataColumn,3)) ' z-slices in your image stack. Are you sure this is what you want?'])
+    if size(dataColumn,3)==1
+        disp('Your results will be better if you use the full image stack instead of a max merge image, if that is what you have done');
+    end;
+    
 end;
 
 
 %adjs=adjacentSlices(centerR,centerC,:)-min(dataMat(:));%deal with it here before dataMat has been altered
+
+%%
+
 minDataMat=min(dataMat(:));
 
 dataMat=dataMat-min(dataMat(:));
@@ -94,12 +109,14 @@ try
        	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
    	end;
 
-	%%% 3Dness	
-	stats=threeDStat(dataMat,centerR,centerC,adjs);
-    statFields=fieldnames(stats);
-   	for fi=1:size(statFields,1)
-       	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-   	end;
+	%%% 3Dness - only if they have 3D information (see above)
+    if ~isempty(adjs)
+        stats=threeDStat(dataMat,centerR,centerC,adjs);
+        statFields=fieldnames(stats);
+        for fi=1:size(statFields,1)
+            gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
+        end;
+    end;
 
 	
 	%%% area stats

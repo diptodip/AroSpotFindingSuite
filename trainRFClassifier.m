@@ -228,6 +228,13 @@ trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
 trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
 
+%% Include and Process BagIndices for the Wager, Hastie, Efron conf interval estimate
+trainingSet.RF.BagIndices=BagIndices;
+trainingSet.RF.Nbi=zeros(spotNum,ntrees);
+for b=1:ntrees
+    trainingSet.RF.Nbi(:,b)=histc(BagIndices{b},1:spotNum);
+end;
+
 %% version check
 if isfield(trainingSet.RF,'UnreliablePortion')
     trainingSet.RF=rmfield(trainingSet.RF,'UnreliablePortion');
