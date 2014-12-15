@@ -162,7 +162,7 @@ if ~isempty(worms)
         spotStats{wi}.classification(:,3)=spotStats{wi}.classification(:,2); %assign column 3 to automatic
         spotStats{wi}.classification(index,3)=spotStats{wi}.classification(index,1); %assign column 3 to manual where manual ~= automatic
         if sum(index)~=0
-            fprintf('%d spots out of  %d manually curated spots were classified incorrectly.\n', sum(index),sum(manualIndex))
+            fprintf('%d spots in %s, worm %d are already in the training set....\n',length(iTraining),[dye '_' num2str(posNumber)],wi);
             spotStats{wi}.msg=[ num2str(sum(index)) ' spots out of ' num2str(sum(manualIndex))  ' manually curated spots were classified incorrectly.'];
         end
         
