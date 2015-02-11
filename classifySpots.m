@@ -42,6 +42,15 @@ function spotStats=classifySpots(worms,varargin)
 %% ========================================================================
 if ~isempty(worms)
     
+    %read in parameters
+    if exist('Aro_parameters.m','file')
+        callingFunction='classifySpots';
+        Aro_parameters;
+    else
+        intervalWidth=95;
+    end;
+
+    
     % Find the dye and posNumber.
     segStackName=worms{1}.segStackFile;
     prefix=regexprep(segStackName,'_SegStacks.mat','');
@@ -167,7 +176,7 @@ if ~isempty(worms)
         end
         
         %% Calculate spot count estimate and the interval estimate
-        spotStats{wi}.intervalWidth=95;
+        spotStats{wi}.intervalWidth=intervalWidth;
         spotStats{wi}.SpotNumEstimate=sum(spotStats{wi}.classification(:,3)==1);
         [lbub,dist,sne]=makeSpotCountInterval(spotStats{wi},'spotStats');
         if sne~=spotStats{wi}.SpotNumEstimate
