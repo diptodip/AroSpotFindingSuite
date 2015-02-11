@@ -26,19 +26,19 @@ function gaussfit=calculateFISHStatistics(dataColumn,centerR,centerC,iSlice,quic
 %anyway...pdf vs. integral (cdf-like).  just have 2D fitting now.  also got
 %rid of stats and just am using the statValues
 %10May2011 Now can pass in value that tells it whether to just do 1D
-%(quickAndDirty=1) or do 2D fits (quickAndDirty=0) 
+%(quickAndDirty=1) or do 2D fits (quickAndDirty=0)
 %21 July - can paste new functions at end (or just call them if they live outside).  templates are provided below
 %20 Sep 2011 - added the bleachFactors passed in so can have raw intensities and adjusted intensities...also made the quickAndDirtyStats a mandatory argument
 %21 Sep 2011 use 2D gaussian fitting function instead of mine
 if size(varargin,2)>0
-	bleachFactors=varargin{1};
+    bleachFactors=varargin{1};
 else
-	bleachFactors=ones(1,iSlice);%In this case, the rawIntensities will be the same as the ordinary (bleachCorrected) ones
+    bleachFactors=ones(1,iSlice);%In this case, the rawIntensities will be the same as the ordinary (bleachCorrected) ones
 end;
 
 dataMat=dataColumn(:,:,iSlice);
 
-%% Setup adjacent slices 
+%% Setup adjacent slices
 adjacentSlices=[];
 adjs=[];
 % don't do this if there are only 1 or 2 slices
@@ -73,68 +73,68 @@ minDataMat=min(dataMat(:));
 
 dataMat=dataMat-min(dataMat(:));
 %names of functions to get statistics
-	%gofOnDataMatrix2D
-	%oneDGausStats
-	%percentiles
-	%threeDstat
-	%areaStats
-	
+%gofOnDataMatrix2D
+%oneDGausStats
+%percentiles
+%threeDstat
+%areaStats
+
 
 try
-	gaussfit={};
-
-	%%% 2D goodness of fit on data matrix
-
+    gaussfit={};
+    
+    %%% 2D goodness of fit on data matrix
+    
     if ~quickAndDirtyStats
-      	%stats=gofOnDataMatrix2D(dataMat,bleachFactors(iSlice));
+        %stats=gofOnDataMatrix2D(dataMat,bleachFactors(iSlice));
         stats=auto2DGaussianFit(dataMat,bleachFactors(iSlice));
         statFields=fieldnames(stats);
-    	for fi=1:size(statFields,1)
-        	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-    	end;    	
+        for fie=1:size(statFields,1)
+            gaussfit.statValues.(statFields{fie})=stats.(statFields{fie});
+        end;
     end;
     %Some of these will be NaNs, but it won't matter unless they are used
     
-%     %%% 1D goodness of fit on data matrix
-%     stats=oneDGaussStats(dataMat,centerR,centerC,bleachFactors(iSlice));
-%     statFields=fieldnames(stats);
-%    	for fi=1:size(statFields,1)
-%        	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-%    	end;
-    	
-    %%% percentiles 
-	stats=percentiles(dataMat);
+    %     %%% 1D goodness of fit on data matrix
+    %     stats=oneDGaussStats(dataMat,centerR,centerC,bleachFactors(iSlice));
+    %     statFields=fieldnames(stats);
+    %    	for fi=1:size(statFields,1)
+    %        	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
+    %    	end;
+    
+    %%% percentiles
+    stats=percentiles(dataMat);
     statFields=fieldnames(stats);
-   	for fi=1:size(statFields,1)
-       	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-   	end;
-
-	%%% 3Dness - only if they have 3D information (see above)
+    for fie=1:size(statFields,1)
+        gaussfit.statValues.(statFields{fie})=stats.(statFields{fie});
+    end;
+    
+    %%% 3Dness - only if they have 3D information (see above)
     if ~isempty(adjs)
         stats=threeDStat(dataMat,centerR,centerC,adjs);
         statFields=fieldnames(stats);
-        for fi=1:size(statFields,1)
-            gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
+        for fie=1:size(statFields,1)
+            gaussfit.statValues.(statFields{fie})=stats.(statFields{fie});
         end;
     end;
-
-	
-	%%% area stats
-	stats=areaStats(dataMat);
+    
+    
+    %%% area stats
+    stats=areaStats(dataMat);
     statFields=fieldnames(stats);
-   	for fi=1:size(statFields,1)
-       	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-   	end;
-	
-	
-	%%% template for calling new statistics %%%
-%	stats=myNewStatisticsFunction(dataMat, other arguments);  <-this is the only line you need to change up here
-%    statFields=fieldnames(stats);
-%   	for fi=1:size(statFields,1)
-%       	gaussfit.statValues.(statFields{fi})=stats.(statFields{fi});
-%   	end;
-
-
+    for fie=1:size(statFields,1)
+        gaussfit.statValues.(statFields{fie})=stats.(statFields{fie});
+    end;
+    
+    
+    %%% template for calling new statistics %%%
+    %	stats=myNewStatisticsFunction(dataMat, other arguments);  <-this is the only line you need to change up here
+    %    statFields=fieldnames(stats);
+    %   	for fie=1:size(statFields,1)
+    %       	gaussfit.statValues.(statFields{fie})=stats.(statFields{fie});
+    %   	end;
+    
+    
 catch ME
     ME
     ME.stack.file
@@ -149,57 +149,57 @@ end;
 
 %%%%%%%%%%%%%%%%%%%%%%
 
-	function statValues = percentiles(dataMat)
-	    %calculate percentile-fractions (like qq plot)...what fraction of max each
-	    %decile is note that dataMat has been min subtracted
-	    pctiles=10:10:90;
-	    percentiles=prctile(dataMat(:)/max(dataMat(:)),pctiles);
-	    for ppi=pctiles
-	        statValues.(['prctile_' num2str(ppi)])=percentiles(ppi/10);
-	    end;
-    end
-    
-%%%%%%%%%%%%%%%%%%%%%%    
-    
-    function statValues = threeDStat(dataMat,centerR,centerC,adjs)
-	    statValues.threeDness=max(adjs)/dataMat(centerR,centerC);
+    function statValues = percentiles(dataMat)
+        %calculate percentile-fractions (like qq plot)...what fraction of max each
+        %decile is note that dataMat has been min subtracted
+        pctiles=10:10:90;
+        percentiles=prctile(dataMat(:)/max(dataMat(:)),pctiles);
+        for ppi=pctiles
+            statValues.(['prctile_' num2str(ppi)])=percentiles(ppi/10);
+        end;
     end
 
 %%%%%%%%%%%%%%%%%%%%%%
 
-	function statValues = areaStats(dataMat)
-		
-	    
-	    %what percentage in each area around 4,4
-	    %these are not normalized basis matrices here
-	    fractionLabels={'center','plusSign','3box','5star','5box','7star','3ring','all'};
-	    areas=zeros([size(dataMat) 7]);
-	    %center
-	    areas(4,4,1)=1;
-	    %+ in center
-	    areas(4,3:5,2)=1;areas(3:5,4,2)=1;
-	    %box around center
-	    areas(3:5,3:5,3)=1;
-	    %star
-	    areas(3:5,3:5,4)=1;areas(2,4,4)=1;areas(4,2,4)=1;areas(6,4,4)=1;areas(4,6,4)=1;
-	    %bigger box
-	    areas(2:6,2:6,5)=1;
-	    %bigger star
-	    areas(:,:,6)=ones(size(dataMat));areas(1,1,6)=0;areas(7,7,6)=0;areas(1,7,6)=0;areas(7,1,6)=0;
-	    %3ring
-	    areas(:,:,7)=areas(:,:,3)-areas(:,:,1);
-	    %all
-	    areas(:,:,8)=ones(size(dataMat));
-	    totalArea=sum(dataMat(:));
-	    for fi=1:7
-	        dataArea=dataMat.*areas(:,:,fi);
-	        statValues.(['raw_' fractionLabels{fi}])=sum(dataArea(:));
-	        statValues.(['fraction_' fractionLabels{fi}])=sum(dataArea(:))/totalArea;
-	    end; %last one is just the total area
-	    statValues.total_area=totalArea;
-	end;
-	
-%%%%%%%%%%%%%%%%%%%%%%	
+    function statValues = threeDStat(dataMat,centerR,centerC,adjs)
+        statValues.threeDness=max(adjs)/dataMat(centerR,centerC);
+    end
+
+%%%%%%%%%%%%%%%%%%%%%%
+
+    function statValues = areaStats(dataMat)
+        
+        
+        %what percentage in each area around 4,4
+        %these are not normalized basis matrices here
+        fractionLabels={'center','plusSign','3box','5star','5box','7star','3ring','all'};
+        areas=zeros([size(dataMat) 7]);
+        %center
+        areas(4,4,1)=1;
+        %+ in center
+        areas(4,3:5,2)=1;areas(3:5,4,2)=1;
+        %box around center
+        areas(3:5,3:5,3)=1;
+        %star
+        areas(3:5,3:5,4)=1;areas(2,4,4)=1;areas(4,2,4)=1;areas(6,4,4)=1;areas(4,6,4)=1;
+        %bigger box
+        areas(2:6,2:6,5)=1;
+        %bigger star
+        areas(:,:,6)=ones(size(dataMat));areas(1,1,6)=0;areas(7,7,6)=0;areas(1,7,6)=0;areas(7,1,6)=0;
+        %3ring
+        areas(:,:,7)=areas(:,:,3)-areas(:,:,1);
+        %all
+        areas(:,:,8)=ones(size(dataMat));
+        totalArea=sum(dataMat(:));
+        for fi=1:7
+            dataArea=dataMat.*areas(:,:,fi);
+            statValues.(['raw_' fractionLabels{fi}])=sum(dataArea(:));
+            statValues.(['fraction_' fractionLabels{fi}])=sum(dataArea(:))/totalArea;
+        end; %last one is just the total area
+        statValues.total_area=totalArea;
+    end
+
+%%%%%%%%%%%%%%%%%%%%%%
 %
 %    function twoDStatValues=gofOnDataMatrix2D(dataMatrix,bleachFactor)
 %        [bestx, rmse,dataFit]=fitOf2DGaussianToSpot(dataMatrix,.05);
@@ -216,7 +216,7 @@ end;
 %        shrunkenFit=dataFit(2:(end-1),2:(end-1));
 %        shrunkenR=corr(shrunkenData(:),shrunkenFit(:));
 %        twoDStatValues.shrunkenRsquared=(shrunkenR)^2;
-%        
+%
 %        scaledDataMat=(dataMat-bestx(5))/bestx(4);
 %        scaledDataFit=(dataFit-bestx(5))/bestx(4);
 %        gfitLabels={'scmse';'scnmse';'scrmse';'scnrmse';'scmae';'scmare';'scr';'scd';'sce'};
@@ -225,8 +225,8 @@ end;
 %            twoDStatValues.(gfitLabels{gfi})=gfs(gfi);
 %        end;
 %    end
-   
-%%%%%%%%%%%%%%%%%%%%%%	
+
+%%%%%%%%%%%%%%%%%%%%%%
 
     function twoDStatValues=auto2DGaussianFit(dataMatrix,bleachFactor)
         %uses autoGaussianSurf from
@@ -234,18 +234,18 @@ end;
         %To fit a 2D gaussian to the dataMatrix
         [xi, yi]=meshgrid(1:7,1:7);
         res=autoGaussianSurf(xi,yi,dataMatrix);
-%         res = 
-% 
-%          a: 532.2046
-%          b: 1.8088e+03
-%         x0: 3.5637
-%         y0: 4.2051
-%     sigmax: 0.2777
-%     sigmay: 0.5756
-%        sse: 1.6034e+05
-%       sse0: 1.8802e+05
-%         r2: 0.1473
-%          G: [7x7 double]
+        %         res =
+        %
+        %          a: 532.2046
+        %          b: 1.8088e+03
+        %         x0: 3.5637
+        %         y0: 4.2051
+        %     sigmax: 0.2777
+        %     sigmay: 0.5756
+        %        sse: 1.6034e+05
+        %       sse0: 1.8802e+05
+        %         r2: 0.1473
+        %          G: [7x7 double]
         twoDStatValues.intensity=res.a;
         twoDStatValues.rawIntensity=twoDStatValues.intensity*bleachFactor;
         twoDStatValues.totalHeight=res.a+res.b;
@@ -269,7 +269,7 @@ end;
         twoDStatValues.dataFit=res.G;
     end
 
-%%%%%%%%%%%%%%%%%%%%%%    
+%%%%%%%%%%%%%%%%%%%%%%
 
     function oneDstatValues=oneDGaussStats(dataMatrix,centerR,centerC,bleachFactor)
         %Note that this is just a quick and dirty heuristic, but it is
@@ -314,15 +314,15 @@ end;
         
         
         
-    end;
-    
-    %%%%%%%%%%%%%%%%%%%%%%
+    end
 
-			function statValues = oneDRawIntensity(oneDstatValues,iSlice,bleachFactors)
-				statValues.rawMeanIntensity=oneDstatValues.meanIntensity*bleachFactors(iSlice);
-				statValues.rawVertIntensity=oneDstatValues.vertIntensity*bleachFactors(iSlice);
-				statValues.rawHorizIntensity=oneDstatValues.horizIntensity*bleachFactors(iSlice);
-			end;
+%%%%%%%%%%%%%%%%%%%%%%
+
+    function statValues = oneDRawIntensity(oneDstatValues,iSlice,bleachFactors)
+        statValues.rawMeanIntensity=oneDstatValues.meanIntensity*bleachFactors(iSlice);
+        statValues.rawVertIntensity=oneDstatValues.vertIntensity*bleachFactors(iSlice);
+        statValues.rawHorizIntensity=oneDstatValues.horizIntensity*bleachFactors(iSlice);
+    end
 
 
 %%%%%%%%%%%%%%%%%%%%%%  TEMPLATE for adding new statistics %%%%%%%%%%%%
