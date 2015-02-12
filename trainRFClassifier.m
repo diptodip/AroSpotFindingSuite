@@ -1,6 +1,6 @@
 function trainingSet=trainRFClassifier(trainingSet,varargin)
 %% ============================================================
-%   Name:       traingRFClassifier.m
+%   Name:       trainRFClassifier.m
 %   Version:    2.5.4, 9 Aug. 2014
 %   Author:     Allison Wu
 %   Command: trainingSet=trainRFClassifier(trainingSet,suffix*,ntrees*,FBoot*,runVarFeatureSel*)
@@ -75,17 +75,34 @@ p.addParamValue('suffix',[],@isstr);
 p.addParamValue('ntrees',1000,@isscalar);
 p.addParamValue('FBoot',1,@isscalar);
 p.addParamValue('runVarFeatureSel',1,@isscalar);
+p.addParamValue('readParameterFile',true,@islogical);
+p.addParamValue('nTreeTry',500,@isscalar);
+p.addParamValue('improve',.01,@isscalar);
+p.addParamValue('stepFactor',1,@isscalar);
+p.addParamValue('intervalWidth',95,@isscalar);
+p.addParamValue('percentileThresholdForOOBPermutedVarDeltaError',25,@isscalar);
 p.parse(trainingSet,varargin{:});
 trainingSet=p.Results.trainingSet;
+
 if isempty(p.Results.suffix)
     suffix=strrep(trainingSet.FileName,'trainingSet_','');
     suffix=strrep(suffix,'.mat','');
 else
 	suffix=p.Results.suffix;
 end;
-ntrees=p.Results.ntrees;
-FBoot=p.Results.FBoot;
-runVarFeatureSel=p.Results.runVarFeatureSel;
+if p.Results.readParameterFile && exist('Aro_parameters.m','file')
+    callingFunction='trainRFClassifier';
+    Aro_parameters;
+else
+    ntrees=p.Results.ntrees;
+    FBoot=p.Results.FBoot;
+    runVarFeatureSel=p.Results.runVarFeatureSel;
+    nTreeTry=p.Results.nTreeTry;
+    improve=p.Results.improve;
+    stepFactor=p.Results.stepFactor;
+    intervalWidth=p.Results.intervalWidth;
+    percentileThresholdForOOBPermutedVarDeltaError=p.Results.percentileThresholdForOOBPermutedVarDeltaError;
+end;
 clear p;
 
 if isfield(trainingSet,'RF') && runVarFeatureSel
@@ -118,7 +135,7 @@ if runVarFeatureSel %if 0 this saves time (e.g. in the middle of reviewFISHClass
 
 	testRF=TreeBagger(1000,trainSetData.X,trainSetData.Y,'FBoot',FBoot,'OOBVarImp','on','splitcriterion','deviance');
 	VarImp=testRF.OOBPermutedVarDeltaError;
-	threshold=prctile(VarImp,25);
+	threshold=prctile(VarImp,percentileThresholdForOOBPermutedVarDeltaError);
 	trainSetData.X=trainSetData.X(:,VarImp>threshold);
 	trainingSet.RF.VarLeftOut=trainingSet.statsUsed(VarImp<threshold);
 	trainingSet.statsUsed(VarImp<threshold)
@@ -131,9 +148,6 @@ if runVarFeatureSel %if 0 this saves time (e.g. in the middle of reviewFISHClass
 	% Find the opitmal number of features used to build each tree.
 	% Modified based on tuneRF in R.
 	disp('Looking for the optimal number of features to sample....')
-	nTreeTry=500;
-	improve=0.01;
-	stepFactor=1;
 	M=sum(VarImp>threshold);
 	mStart=floor(sqrt(M));
 	oobErrors=zeros(ceil(M-0.5*mStart)-mStart,2);
@@ -218,7 +232,7 @@ trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
 
 
 %% Make interval estimate
-trainingSet.RF.intervalWidth=95;
+trainingSet.RF.intervalWidth=intervalWidth;
 [lbub,dist,~]=makeSpotCountInterval(trainingSet.RF,'trainingSet');
 trainingSet.RF.SpotNumRange=lbub;
 trainingSet.RF.SpotNumDistribution=dist;
@@ -227,13 +241,6 @@ trainingSet.RF.SpotNumDistribution=dist;
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
 trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
-
-%% Include and Process BagIndices for the Wager, Hastie, Efron conf interval estimate
-trainingSet.RF.BagIndices=BagIndices;
-trainingSet.RF.Nbi=zeros(spotNum,ntrees);
-for b=1:ntrees
-    trainingSet.RF.Nbi(:,b)=histc(BagIndices{b},1:spotNum);
-end;
 
 %% version check
 if isfield(trainingSet.RF,'UnreliablePortion')

@@ -21,7 +21,12 @@ function [lbub,distributionSpotCount,spotNumEstimate]=makeSpotCountInterval(spot
 %                            - a point estimate of the spot number
 %                       
 %% ========================================================================
-nBoots=1000;
+if exist('Aro_parameters.m','file')
+    callingFunction='makeSpotCountInterval';
+    Aro_parameters;
+else
+    nBoots=1000;
+end;
 width=spotStatsOrTrainingSetRF.intervalWidth;
 
 %% Deal with manual classification if not making a training set

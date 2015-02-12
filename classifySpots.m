@@ -42,6 +42,15 @@ function spotStats=classifySpots(worms,varargin)
 %% ========================================================================
 if ~isempty(worms)
     
+    %read in parameters
+    if exist('Aro_parameters.m','file')
+        callingFunction='classifySpots';
+        Aro_parameters;
+    else
+        intervalWidth=95;
+    end;
+
+    
     % Find the dye and posNumber.
     segStackName=worms{1}.segStackFile;
     prefix=regexprep(segStackName,'_SegStacks.mat','');
@@ -149,7 +158,7 @@ if ~isempty(worms)
         spotInfo=[ones(spotNum,1)*posNumber ones(spotNum,1)*wi worms{wi}.spotDataVectors.spotInfoNumberInWorm];
         [~,iTraining,iInWorm]=intersect(trainingSet.spotInfo(:,1:3),spotInfo,'rows');
         if ~isempty(iTraining)
-            fprintf('%d spots in %s are already in the training set....\n',length(iTraining),[dye '_' num2str(posNumber)])
+            fprintf('%d spots in %s, worm %d are already in the training set....\n',length(iTraining),[dye '_' num2str(posNumber)],wi)
             spotStats{wi}.classification(iInWorm,1)=trainingSet.spotInfo(iTraining,4);
         end
         
@@ -162,12 +171,12 @@ if ~isempty(worms)
         spotStats{wi}.classification(:,3)=spotStats{wi}.classification(:,2); %assign column 3 to automatic
         spotStats{wi}.classification(index,3)=spotStats{wi}.classification(index,1); %assign column 3 to manual where manual ~= automatic
         if sum(index)~=0
-            fprintf('%d spots out of  %d manually curated spots were classified incorrectly.\n', sum(index),sum(manualIndex))
+            fprintf('%d spots in %s, worm %d are already in the training set....\n',length(iTraining),[dye '_' num2str(posNumber)],wi);
             spotStats{wi}.msg=[ num2str(sum(index)) ' spots out of ' num2str(sum(manualIndex))  ' manually curated spots were classified incorrectly.'];
         end
         
         %% Calculate spot count estimate and the interval estimate
-        spotStats{wi}.intervalWidth=95;
+        spotStats{wi}.intervalWidth=intervalWidth;
         spotStats{wi}.SpotNumEstimate=sum(spotStats{wi}.classification(:,3)==1);
         [lbub,dist,sne]=makeSpotCountInterval(spotStats{wi},'spotStats');
         if sne~=spotStats{wi}.SpotNumEstimate

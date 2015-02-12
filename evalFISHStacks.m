@@ -30,12 +30,23 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 
 versionName='v2.5';
 
-cutoffPercentile=90;
-cutoffStatisticValue=.7;
-%cutoffPercentile=90; % for yeast data
-%cutoffStatisticValue=.5;
-badSliceCutoffStatisticValue=.3;
-cutoffStat='scd';
+if exist('Aro_parameters.m','file')
+    callingFunction='evalFISHStacks';
+    Aro_parameters;
+else
+    
+    
+    cutoffPercentile=90;
+    cutoffStatisticValue=.7;
+    %cutoffPercentile=90; % for yeast data
+    %cutoffStatisticValue=.5;
+    badSliceCutoffStatisticValue=.3;
+    stopN=30;%21Oct11 changed back to 30.  20Sep11 changed to 15
+    badSliceStopN=5;
+    cutoffStat='scd';
+end;
+
+
 cutoffStatBackup='intensity';
 
 %getDirectory
@@ -53,8 +64,6 @@ fprintf('wormGaussianFit File Name: %s \n', wormFitFileName)
 totalSpotsTested=0;
 if exist(segStacksFileName,'file')
     % segImages have been created.
-    stopN=30;%21Oct11 changed back to 30.  20Sep11 changed to 15
-    badSliceStopN=5;
     
     spotSize=[7 7];
     offset=floor((spotSize-1)/2);

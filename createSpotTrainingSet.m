@@ -216,7 +216,6 @@ elseif appendTrainingSet==1
     % Update the classification for duplicated spots if necessary.
     if ~isempty(iUpdate)
         disp('Duplicated spot:')% Print out the spot information for debugging.
-        d
         disp('Update the classification...')
         trainingSet.dataMatrix.Y(iOrigi)=trainingSetToAppend.dataMatrix.Y(iUpdate);
         trainingSet.spotInfo(iOrigi,4)=trainingSetToAppend.spotInfo(iUpdate,4);
