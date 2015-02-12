@@ -94,5 +94,6 @@ zlabel('# of trees','Fontsize',14,'FontWeight','bold');
 set(gcf,'units','normalized');
 set(gcf,'Position',[0 0 1 1]);
 if exportFig
-    export_fig(regexprep(trainingSet.RF.RFfileName,'.mat','_spotTreeProbs.png'),'-png');
+    Aro_parameters;
+    export_fig(fullfile(PlotDir,regexprep(trainingSet.RF.RFfileName,'.mat','_spotTreeProbs.png')),'-png');
 end;
