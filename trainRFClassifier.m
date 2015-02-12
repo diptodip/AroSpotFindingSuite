@@ -91,7 +91,6 @@ else
 	suffix=p.Results.suffix;
 end;
 if p.Results.readParameterFile && exist('Aro_parameters.m','file')
-    callingFunction='trainRFClassifier';
     Aro_parameters;
 else
     ntrees=p.Results.ntrees;

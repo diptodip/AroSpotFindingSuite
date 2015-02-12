@@ -25,54 +25,64 @@ function createSegImages(stackFileType,varargin)
 %       - 2013 Apr. 16th, replace readTiffStack with loadtiff to avoid
 %       imread problem on Mac.
 %       - 2014 Jan. 6th, modify the code to make it accomodate extra channels.    
+%       - 2015 Feb. 11th, modified to take info from the parameter file
 %% ========================================================================
+
+Aro_parameters;
 
 % stackFileType: 'stk', 'tif'
 
 % Determine filetype and find available color channels first
 disp(['Stack file type is: ' stackFileType]);
 disp('Determine the channels available : ')
-if strcmp(stackFileType,'stk')
-    initialnumber = '001';
-    d = dir(['*' initialnumber '*.stk']);
-    currcolor = 1;
-    for i = 1:length(d)
-        tmp = strrep(d(i).name,[initialnumber '.stk'],'');
-        tmp = strrep(tmp,'_','');
-        if ~sum(strcmp(tmp,{'segment','thumbs','gfp'}))  %these are "special"
-            dye{currcolor} = tmp;
-            currcolor = currcolor+1;
-        end;
-    end;
-    
-elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
-    d = dir('*_*.tif');
-    if ~isempty(d)
-        tmp={length(d),1};
-        for k=1:length(d)
-            nameSplit=regexp(d(k).name,'_','split');
-            tmp{k}=nameSplit{1};
-        end
-        tmp=unique(tmp);
+% 
+% if strcmp(stackFileType,'stk')
+%     initialnumber = '001';
+%     d = dir(['*' initialnumber '*.stk']);
+%     currcolor = 1;
+%     for i = 1:length(d)
+%         tmp = strrep(d(i).name,[initialnumber '.stk'],'');
+%         tmp = strrep(tmp,'_','');
+%         if ~sum(strcmp(tmp,{'segment','thumbs','gfp'}))  %these are "special"
+%             dye{currcolor} = tmp;
+%             currcolor = currcolor+1;
+%         end;
+%     end;
+%     
+% elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
+%     d = dir('*_*.tif');
+%     if ~isempty(d)
+%         tmp={length(d),1};
+%         for k=1:length(d)
+%             nameSplit=regexp(d(k).name,'_','split');
+%             tmp{k}=nameSplit{1};
+%         end
+%         tmp=unique(tmp);
+% 
+%         j = 1;k=1;
+%         while j<=length(tmp) 
+%             if ~sum(strcmpi(tmp(j),{'segment','thumbs','gfp','trans'}))  %these are "special"
+%                 dye{k} = tmp{j};
+%                 k=k+1;
+%             end
+%                 j = j+1;
+%         end;    
+%     else
+%         disp(['Length of d is 0 (no tiffs) in ' pwd]);
+%     end;
+% end;
 
-        j = 1;k=1;
-        while j<=length(tmp) 
-            if ~sum(strcmpi(tmp(j),{'segment','thumbs','gfp','trans'}))  %these are "special"
-                dye{k} = tmp{j};
-                k=k+1;
-            end
-                j = j+1;
-        end;    
-    else
-        disp(['Length of d is 0 (no tiffs) in ' pwd]);
-    end;
+dye=dyesUsed;
+if ~isempty(isdapi)
+    dye{end+1}='dapi';
 end;
+
 
 dye=sort(dye);
 disp(dye);
 
 
-stacks=dir('segmenttrans*');
+stacks=dir(fullfile(SegmentationMaskDir,'segmenttrans*'));
 stackSize=zeros(length(dye),3);
 
 if ~isempty(varargin)
@@ -87,15 +97,20 @@ for i=1:length(stacks)
         if strcmp(stackFileType,'stk')
             stackName=regexprep(stacks(i).name,'segmenttrans','');
             stackSuffix=regexprep(stackName,'.mat','');
-            load(['segmenttrans' stackSuffix '.mat'])
+            load(fullfile(SegmentationMaskDir,['segmenttrans' stackSuffix '.mat']));
         elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
             stackName=regexprep(stacks(i).name,'_','\.');
             nameSplit=regexp(stackName,'\.','split');
             nameSplit=nameSplit(~cellfun('isempty',nameSplit));
             stackSuffix=nameSplit{2};
-            load(['segmenttrans_' stackSuffix '.mat'])
+            load(fullfile(SegmentationMaskDir,['segmenttrans_' stackSuffix '.mat']));
         end
-        segStackFileName=[dye{di} '_' stackSuffix '_SegStacks.mat'];
+        switch nestedOrFlatDirectoryStructure
+            case 'flat'
+                segStackFileName=[dye{di} '_' stackSuffix '_SegStacks.mat'];
+            case 'nested'
+                segStackFileName=fullfile(SegStacksDir,dye,[dye{di} '_' stackSuffix '_SegStacks.mat']);
+        end;
         disp(stackSuffix);
         
         if ~exist(segStackFileName,'file') %e.g. cy5_Pos0_segStacks.mat % don't overWrite
@@ -105,21 +120,34 @@ for i=1:length(stacks)
             segStacks=cell(length(currpolys),1);
             segMasks=cell(length(currpolys),1);
             if strcmp(stackFileType,'stk')
-                if exist([dye{di} stackSuffix '.stk'],'file')
-                    stackInfo=readmm([dye{di} stackSuffix '.stk']);
+                switch nestedOrFlatDirectoryStructure
+                    case 'flat'
+                        imageFileName=[dye{di} stackSuffix '.stk'];
+                    case 'nested'
+                        imageFileName=fullfile(ImageDir,dye,[dye{di} stackSuffix '.stk']);
+                end;
+                if exist(imageFileName,'file')
+                    stackInfo=readmm(imageFileName);
                     stack=stackInfo.imagedata;
                     clear stackInfo
                     stack=double(stack);
                 else
-                    fprintf('Failed to find the file %s .', [dye{di} stackSuffix '.stk'])
+                    fprintf('Failed to find the file %s .', imageFileName)
                 end
             elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
-                if exist([dye{di} '_' stackSuffix '.tif'],'file')
-                    stack=double(loadtiff([dye{di} '_' stackSuffix '.tif']));
-                elseif exist([dye{di} '__' stackSuffix '.tif'],'file')
-                    stack=loadtiff([dye{di} '__' stackSuffix '.tif']);
+                switch nestedOrFlatDirectoryStructure
+                    case 'flat'
+                        imageFileName=[dye{di} '_' stackSuffix '.tif'];
+                    case 'nested'
+                        imageFileName=fullfile(ImageDir,dye,[dye{di} '_' stackSuffix '.tif']);
+                end;
+
+                if exist(imageFileName,'file') %tif
+                    stack=double(loadtiff(imageFileName));
+                elseif exist([imageFileName 'f'],'file') %tiff
+                    stack=loadtiff([imageFileName 'f']);
                 else
-                    fprintf('Failed to find the file %s .', [dye{di} '_' stackSuffix '.tif'])
+                    fprintf('Failed to find the file %s .', imageFileName)
                 end
             end
             
@@ -134,9 +162,13 @@ for i=1:length(stacks)
                     wormImage(:,:,zi)=imresize(double(imcrop(stack(:,:,zi),bb.BoundingBox)),reSize).*wormMask;
                     wil=wormImage(:,:,zi);
                     wil=wil(wil>0);
-                    pwil=max(prctile(wil,20));
+                    pwil=max(prctile(wil,20));%%? why max?
                     %disp([num2str(zi) ' ' num2str(pwil)]);
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%
+                    %%%% Note that the following line also means that all
+                    %%%% slices are scaled to their 20th percentile
                     wormImage(:,:,zi)=wormImage(:,:,zi)/pwil;%takes care of out of focus ones
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%
                     clear('wil');
                 end
                 segStacks{wi}=wormImage;
@@ -144,7 +176,7 @@ for i=1:length(stacks)
                 fprintf('%g%% ', wi/length(currpolys)*100)
             end
             
-            save(fullfile(pwd,segStackFileName),'segStacks','segMasks')
+            save(segStackFileName,'segStacks','segMasks')
             fprintf('\n')
             tElapsed=toc;
             tElapsed=tElapsed/60;

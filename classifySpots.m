@@ -44,7 +44,6 @@ if ~isempty(worms)
     
     %read in parameters
     if exist('Aro_parameters.m','file')
-        callingFunction='classifySpots';
         Aro_parameters;
     else
         intervalWidth=95;

@@ -31,7 +31,6 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 versionName='v2.5';
 
 if exist('Aro_parameters.m','file')
-    callingFunction='evalFISHStacks';
     Aro_parameters;
 else
     
@@ -55,8 +54,18 @@ nameSplit=regexp(stackName,'\.','split');
 nameSplit=nameSplit(~cellfun('isempty',nameSplit));
 dye=nameSplit{1};
 stackSuffix=nameSplit{2};
-segStacksFileName=[dye '_' stackSuffix '_SegStacks.mat'];
-wormFitFileName=[dye '_' stackSuffix '_wormGaussianFit.mat'];
+
+switch nestedOrFlatDirectoryStructure
+    case 'flat'
+        segStacksFileName=[dye '_' stackSuffix '_SegStacks.mat'];
+        wormFitFileName=[dye '_' stackSuffix '_wormGaussianFit.mat'];
+    case 'nested'
+        segStacksFileName=fullfile(SegStacksDir,dye,[dye '_' stackSuffix '_SegStacks.mat']);
+        wormFitFileName=fullfile(WormGaussianFitDir,dye,[dye '_' stackSuffix '_wormGaussianFit.mat']);
+end;
+
+
+
 fprintf('segStacks File Name: %s \n', segStacksFileName)
 fprintf('wormGaussianFit File Name: %s \n', wormFitFileName)
 
@@ -456,7 +465,7 @@ if exist(segStacksFileName,'file')
         worms=addStatsToWormGaussian(worms);
         
         fprintf('Saving worms to:  %s\n',wormFitFileName);
-        save(fullfile(pwd,wormFitFileName),'worms');
+        save(wormFitFileName,'worms');
         
         disp(['All worms in ' dye ' ' stackSuffix ' are done.' ])
         if exist('tmp.mat','file')
