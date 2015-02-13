@@ -74,7 +74,7 @@ if ~isempty(worms)
         fprintf('Using trained classifier linked to %s \n', trainingSet.FileName)
         load(trainingSet.RF.RFfileName);
     else
-        t=dir(['trainingSet_' dye '**.mat']);
+        t=dir(fullfile(TrainingSetDir,['trainingSet_' dye '**.mat']));
         switch length(t)
             case 0
                 fprintf('Cannot find a trained classifier corresponding to this dye.')
@@ -82,14 +82,14 @@ if ~isempty(worms)
                 load(name)
             case 1
                 fprintf('Using trained classifier linked to %s \n', t.name)
-                load(t.name);
+                load(fullfile(TrainingSetDir,t.name));
             otherwise
                 disp('There are multiple trained classifiers found for this dye:')
                 for k=1:length(t)
-                    disp([num2str(k) '): ' t(k).name])
+                    disp([num2str(k) '): ' t(k).name]);
                 end
                 ttNum=input('Which one do you want to use? Enter NUMBER: ');
-                load(t(ttNum).name)
+                load(fullfile(TrainingSetDir,t(ttNum).name));
         end
         load(trainingSet.RF.RFfileName);
     end
@@ -202,7 +202,7 @@ if ~isempty(worms)
     end
     
     spotStatsName=[dye '_Pos' num2str(posNumber) '_spotStats.mat'];
-    save(fullfile(pwd,spotStatsName),'spotStats')
+    save(fullfile(SpotStatsDir,spotStatsName),'spotStats')
 else
     disp('This stack is bad. Skip spot classification.')
     spotStats={};

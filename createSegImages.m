@@ -26,6 +26,7 @@ function createSegImages(stackFileType,varargin)
 %       imread problem on Mac.
 %       - 2014 Jan. 6th, modify the code to make it accomodate extra channels.    
 %       - 2015 Feb. 11th, modified to take info from the parameter file
+%       - 2015 Feb. 12th, segStacks is now not masked out.
 %% ========================================================================
 
    run('Aro_parameters.m');
@@ -158,9 +159,13 @@ for i=1:length(stacks)
                 %fprintf('Worm %d : ', wi)
                 segMasks{wi}=wormMask;
                 
+                %A question of whether to mask the outside or keep it in.
+                %If it is kept in, then it causes display problems in the
+                %reviewing. Also it messes up spots on the edges because
+                %they can be artificially clipped down to 0
                 for zi=1:size(stack,3)
-                    wormImage(:,:,zi)=imresize(double(imcrop(stack(:,:,zi),bb.BoundingBox)),reSize).*wormMask;
-                    wil=wormImage(:,:,zi);
+                    wormImage(:,:,zi)=imresize(double(imcrop(stack(:,:,zi),bb.BoundingBox)),reSize);
+                    wil=wormImage(:,:,zi).*wormMask;
                     wil=wil(wil>0);
                     pwil=max(prctile(wil,20));%%? why max?
                     %disp([num2str(zi) ' ' num2str(pwil)]);

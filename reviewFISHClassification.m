@@ -359,7 +359,9 @@ function displayImFull(hObject,handles,drawSpotResults)
             spotContextIm(1:sz(1),1:sz(2))=scale(data.wormImageMaxMerge{data.iCurrentWorm});
         end;
     end;
-    data.spotContext=imshow(spotContextIm);
+    boundary=bwmorph(data.segMasks{data.iCurrentWorm},'remove');
+    spotContextIm_withBoundary=cat(3,max(0,spotContextIm-.4*boundary),spotContextIm,max(0,spotContextIm-.4*boundary));
+    data.spotContext=imshow(spotContextIm_withBoundary);
     
     %Note that if there is a very bright pixel in this, it will tend to make
     %everything else very dark

@@ -30,8 +30,11 @@ function trainingSet=createSpotTrainingSet(stackName,probeName,varargin)
 %
 %% ========================================================================
 
+run('Aro_parameters.m');
+
 [dye, stackSuffix, wormGaussianFitName, segStacksName,~]=parseStackNames(stackName);
-trainingSetName=['trainingSet_' dye '_' probeName '.mat'];
+
+trainingSetName=fullfile(TrainingSetDir,['trainingSet_' dye '_' probeName '.mat']);
 
 if isempty(varargin)
     appendTrainingSet=0;
@@ -63,7 +66,7 @@ end
 posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
 
 disp('Load in spots information...')
-load(wormGaussianFitName);
+load(fullfile(WormGaussianFitDir,wormGaussianFitName));
 % Version check
 if ~strcmp('v2.5',worms{1}.version)
     display('Detect an older version. Update the wormGaussianFit with new stats.')
@@ -71,7 +74,7 @@ if ~strcmp('v2.5',worms{1}.version)
 end
 wormNum=size(worms);
 stackH=worms{1}.numberOfPlanes;
-w=[1:wormNum];
+w=1:wormNum;
 spotsInWorm=zeros(wormNum);
 for wi=1:wormNum
     spotsInWorm(wi)=length(worms{wi}.spotDataVectors.rawValue);
@@ -192,7 +195,7 @@ if appendTrainingSet==0
     trainingSet.version= 'ver. 2.5, new stats added';
     trainingSet.appended=0;             % 0, if it's a newly created training set. 1, if it's a training set that had been appended with new spots.
     disp('Saving the training set...')
-    save(fullfile(pwd,trainingSetName),'trainingSet')
+    save(trainingSetName,'trainingSet')
 elseif appendTrainingSet==1
     %Should check for duplicates!!
     disp('Append new spot information and stats to existing training set...')
@@ -260,7 +263,7 @@ elseif appendTrainingSet==1
 end
 trainingSet.FileName=trainingSetName;
 disp('Saving the training set...')
-save(fullfile(pwd,trainingSetName),'trainingSet')
+save(trainingSetName,'trainingSet')
 
 fprintf('There are %d spots in total in the training set.\n', length(trainingSet.dataMatrix.Y))
 fprintf('%d good spots and %d bad spots were chosen.\n', sum(trainingSet.dataMatrix.Y),sum(trainingSet.dataMatrix.Y==0));

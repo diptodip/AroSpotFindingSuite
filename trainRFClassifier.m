@@ -223,8 +223,8 @@ end
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
 Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
-trainingSet.RF.RFfileName=[suffix '_RF.mat'];
-save(fullfile(pwd,[suffix '_RF.mat']),'Trees','BagIndices','-v7.3');
+trainingSet.RF.RFfileName=fullfile(TrainingSetDir,[suffix '_RF.mat']);
+save(trainingSet.RF.RFfileName,'Trees','BagIndices','-v7.3');
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
@@ -251,7 +251,7 @@ end
 
 
 %% Save the training set
-save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet','-v7.3')
+save(fullfile(TrainingSetDir,['trainingSet_' suffix '.mat']),'trainingSet','-v7.3')
 fprintf('Finished training the random forest in %g minutes.\n', toc/60)
 
 end
