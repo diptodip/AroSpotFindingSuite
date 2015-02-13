@@ -19,7 +19,7 @@ function doEvalFISHStacksForAll(varargin)
         toOverWrite=varargin{1};
     end;
     
-    Aro_parameters;
+    run('Aro_parameters.m');
     
     switch nestedOrFlatDirectoryStructure
         case 'flat'

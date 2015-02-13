@@ -44,7 +44,7 @@ if ~isempty(worms)
     
     %read in parameters
     if exist('Aro_parameters.m','file')
-        Aro_parameters;
+        run('Aro_parameters.m');
     else
         intervalWidth=95;
     end;

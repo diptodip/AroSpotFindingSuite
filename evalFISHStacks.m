@@ -31,7 +31,7 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 versionName='v2.5';
 
 if exist('Aro_parameters.m','file')
-    Aro_parameters;
+   run('Aro_parameters.m');
 else
     
     

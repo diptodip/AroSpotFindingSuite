@@ -22,7 +22,7 @@ function [lbub,distributionSpotCount,spotNumEstimate]=makeSpotCountInterval(spot
 %                       
 %% ========================================================================
 if exist('Aro_parameters.m','file')
-    Aro_parameters;
+   run('Aro_parameters.m');
 else
     nBoots=1000;
 end;

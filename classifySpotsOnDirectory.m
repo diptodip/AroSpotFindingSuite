@@ -18,7 +18,7 @@ function classifySpotsOnDirectory(varargin)
     %       - 2013.03.27 small bug fixes.
     %% ========================================================================
     
-    Aro_parameters;
+    run('Aro_parameters.m');
     
     
     trainingSetSpecified=0;

@@ -102,8 +102,9 @@ end;
 
 %%%%%%%%%%%%%%%%%%%%%  parameters %%%%%%%%%%%%%%
 
-ST = dbstack;
-callingFunction=ST.name;
+ST = dbstack(2); %Aro_parameters is called from the calling function by run(fullfile(pwd,'Aro_parameters.m'))
+callingFunction=ST(1).name;
+disp([callingFunction ': Reading Aro_parameters file in ' pwd '/']);
 
 switch callingFunction
     case 'trainRFClassifier'
@@ -171,6 +172,6 @@ switch callingFunction
         nBoots=1000; %should be a large number
     otherwise
 end;
-end;
+
 
 

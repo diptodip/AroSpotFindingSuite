@@ -28,7 +28,7 @@ function createSegImages(stackFileType,varargin)
 %       - 2015 Feb. 11th, modified to take info from the parameter file
 %% ========================================================================
 
-Aro_parameters;
+   run('Aro_parameters.m');
 
 % stackFileType: 'stk', 'tif'
 

@@ -165,8 +165,9 @@ function reviewFISHClassification_OpeningFcn(hObject, eventdata, handles, vararg
     end
     
     
-    Aro_parameters;
-    handles.WormGaussianFitDir=WormGaussianFitDir;
+   run('Aro_parameters.m');
+
+   handles.WormGaussianFitDir=WormGaussianFitDir;
     handles.SpotStatsDir=SpotStatsDir;
     handles.SegStacksDir=SegStacksDir;
     handles.TrainingSetDir=TrainingSetDir;
