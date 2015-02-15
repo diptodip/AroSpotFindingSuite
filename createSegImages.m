@@ -98,19 +98,21 @@ for i=1:length(stacks)
         if strcmp(stackFileType,'stk')
             stackName=regexprep(stacks(i).name,'segmenttrans','');
             stackSuffix=regexprep(stackName,'.mat','');
-            load(fullfile(SegmentationMaskDir,['segmenttrans' stackSuffix '.mat']));
+            st=load(fullfile(SegmentationMaskDir,['segmenttrans' stackSuffix '.mat']));
+            currpolys=st.currpolys;
         elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
             stackName=regexprep(stacks(i).name,'_','\.');
             nameSplit=regexp(stackName,'\.','split');
             nameSplit=nameSplit(~cellfun('isempty',nameSplit));
             stackSuffix=nameSplit{2};
-            load(fullfile(SegmentationMaskDir,['segmenttrans_' stackSuffix '.mat']));
+            st=load(fullfile(SegmentationMaskDir,['segmenttrans_' stackSuffix '.mat']));
+            currpolys=st.currpolys;
         end
         switch nestedOrFlatDirectoryStructure
             case 'flat'
                 segStackFileName=[dye{di} '_' stackSuffix '_SegStacks.mat'];
             case 'nested'
-                segStackFileName=fullfile(SegStacksDir,dye,[dye{di} '_' stackSuffix '_SegStacks.mat']);
+                segStackFileName=fullfile(SegStacksDir,dye{di},[dye{di} '_' stackSuffix '_SegStacks.mat']);
         end;
         disp(stackSuffix);
         
@@ -118,19 +120,19 @@ for i=1:length(stacks)
             fprintf('Creating %s segStacks of %s ....\n',dye{di},stackSuffix);
             tic
             fprintf('Dye %s: \n',dye{di})
-            segStacks=cell(length(currpolys),1);
-            segMasks=cell(length(currpolys),1);
+            segStacks1=cell(length(currpolys),1);
+            segMasks1=cell(length(currpolys),1);
             if strcmp(stackFileType,'stk')
                 switch nestedOrFlatDirectoryStructure
                     case 'flat'
                         imageFileName=[dye{di} stackSuffix '.stk'];
                     case 'nested'
-                        imageFileName=fullfile(ImageDir,dye,[dye{di} stackSuffix '.stk']);
+                        imageFileName=fullfile(ImageDir,dye{di},[dye{di} stackSuffix '.stk']);
                 end;
                 if exist(imageFileName,'file')
                     stackInfo=readmm(imageFileName);
                     stack=stackInfo.imagedata;
-                    clear stackInfo
+                    %clear stackInfo
                     stack=double(stack);
                 else
                     fprintf('Failed to find the file %s .', imageFileName)
@@ -140,7 +142,7 @@ for i=1:length(stacks)
                     case 'flat'
                         imageFileName=[dye{di} '_' stackSuffix '.tif'];
                     case 'nested'
-                        imageFileName=fullfile(ImageDir,dye,[dye{di} '_' stackSuffix '.tif']);
+                        imageFileName=fullfile(ImageDir,dye{di},[dye{di} '_' stackSuffix '.tif']);
                 end;
 
                 if exist(imageFileName,'file') %tif
@@ -157,7 +159,7 @@ for i=1:length(stacks)
                 wormMask=imresize(imcrop(currpolys{wi},bb.BoundingBox),reSize);
                 wormImage=zeros([size(wormMask), size(stack,3)]);
                 %fprintf('Worm %d : ', wi)
-                segMasks{wi}=wormMask;
+                segMasks1{wi}=wormMask;
                 
                 %A question of whether to mask the outside or keep it in.
                 %If it is kept in, then it causes display problems in the
@@ -174,20 +176,20 @@ for i=1:length(stacks)
                     %%%% slices are scaled to their 20th percentile
                     wormImage(:,:,zi)=wormImage(:,:,zi)/pwil;%takes care of out of focus ones
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    clear('wil');
+                    %clear('wil');
                 end
-                segStacks{wi}=wormImage;
-                clear wormImage
+                segStacks1{wi}=wormImage;
+                %clear wormImage
                 fprintf('%g%% ', wi/length(currpolys)*100)
             end
             
-            save(segStackFileName,'segStacks','segMasks')
+            parsave_segStacks(segStackFileName,segStacks1,segMasks1)
             fprintf('\n')
             tElapsed=toc;
             tElapsed=tElapsed/60;
             fprintf('For %s in position %s , it took %g minutes. \n', dye{di}, stackSuffix, tElapsed)
             
-            clear stack
+            %clear stack
             
             
         else
@@ -200,4 +202,7 @@ for i=1:length(stacks)
 end
 %stack=loadtiff(['dapi' stackSuffix '.tif'],1,stackSize(di,3));
 %stack=double(stack);
+end
+    function parsave_segStacks(fname,segStacks,segMasks)
+save(fname,'segStacks','segMasks');
 end
