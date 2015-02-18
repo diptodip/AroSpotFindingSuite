@@ -18,7 +18,7 @@ function doEvalFISHStacksForAll(varargin)
     else
         toOverWrite=varargin{1};
     end;
-    
+    WormGaussianFitDir='';% need this here so that the parfor can run.  it is overwritten by Aro_parameters but the parfor needs to see it here to know about it
     run('Aro_parameters.m');
     
     switch nestedOrFlatDirectoryStructure
@@ -44,10 +44,14 @@ function doEvalFISHStacksForAll(varargin)
             
         case 'nested'
             for iD=1:length(dyesUsed)
-                d=dir(fullfile(SegStacksDir,dyesUsed{iD},'**_SegStacks.mat'));
+                d=dir(fullfile(SegStacksDir,dyesUsed{iD},'*_SegStacks.mat'));
                 
-                for k=1:length(d)
+                parfor k=1:length(d)
                     [dye, stackSuffix, wormFitName, ~,~]=parseStackNames(regexprep(d(k).name,'_SegStacks.mat',''));
+                    disp(dye);
+                    disp(stackSuffix);
+                    disp(wormFitName);
+                    disp(d(k).name);
                     if ~any(strcmp(dye,{'dapi','trans'}))
                         if toOverWrite % Will overwrite all the wormGaussianFit.mat files
                             fprintf('Evaluating the image stack %s ....\n', d(k).name)

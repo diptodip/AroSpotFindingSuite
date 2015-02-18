@@ -66,24 +66,24 @@ end
 posNumber=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
 
 disp('Load in spots information...')
-load(fullfile(WormGaussianFitDir,wormGaussianFitName));
+load(fullfile(WormGaussianFitDir,dye,wormGaussianFitName));
 % Version check
 if ~strcmp('v2.5',worms{1}.version)
     display('Detect an older version. Update the wormGaussianFit with new stats.')
     worms=addStatsToWormGaussian(worms);
 end
-wormNum=size(worms);
+wormNum=size(worms,1);
 stackH=worms{1}.numberOfPlanes;
 w=1:wormNum;
-spotsInWorm=zeros(wormNum);
+spotsInWorm=zeros(wormNum,1);
 for wi=1:wormNum
     spotsInWorm(wi)=length(worms{wi}.spotDataVectors.rawValue);
 end
 [~,index]=sort(spotsInWorm,'descend');
-w=w(index);
+w=w(index);%have it do the one with the most spots first for efficiency
 
 disp('Load in segmented stacks...')
-load(segStacksName);
+load(fullfile(SegStacksDir,dye,segStacksName));
 
 disp('Identify spots in worms...')
 for wi=1:wormNum
@@ -115,9 +115,9 @@ goldNum=size(goldSpotsData,1);
 rejNum=size(rejectedSpotsData,1);
 spotNum=goldNum+rejNum;
 
-% spotInfo is: [posNumber, wormNumber, spotIndex, classification]
-trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)];
-trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)];
+% spotInfo is: [posNumber, wormNumber, spotIndex, classification]  #Note that spotIndex is worms{x}.spotDataVectors.spotInfoNumberInWorm
+trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)]; %good
+trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)]; %append bad
 trainingSet.stats=struct;
 % Add stats info to training set
 fieldsToAdd=fields(worms{1}.spotDataVectors);

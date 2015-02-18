@@ -85,8 +85,8 @@ p.parse(trainingSet,varargin{:});
 trainingSet=p.Results.trainingSet;
 
 if isempty(p.Results.suffix)
-    suffix=strrep(trainingSet.FileName,'trainingSet_','');
-    suffix=strrep(suffix,'.mat','');
+    [~,suffix,~]=fileparts(trainingSet.FileName);
+    suffix=strrep(suffix,'trainingSet_','');
 else
 	suffix=p.Results.suffix;
 end;
@@ -238,7 +238,7 @@ trainingSet.RF.SpotNumDistribution=dist;
 
 %% Include other fields
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
-trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
+trainingSet.RF.FileName=fullfile(TrainingSetDir,['trainingSet_' suffix '.mat']);
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
 
 %% version check
