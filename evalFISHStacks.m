@@ -18,7 +18,10 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 %       re-allocate the memory available in MatLab.
 %       2013 Apr. 25th: add in new stats
 %       2013 May 7th: fix the edge spot problem
-
+%       2015 16 Feb: The edge spot problem is still a problem.  Don't want any spots that go off the edge of the image. Need full 7x7
+%                    So have mask be a little bigger than the object.  Don't take regional maxima outside the mask, but let the box go outside it.
+%                   Because of the way segStacks is made, this means that segstacks has to be a little bigger than the actual object.
+%                   So expand segstacks 3 pixels on each side if possible. but don't expand the segmask
 %   Note: Do not use spaces in file names.  Use underscores or camelCase.
 %         If you are getting file read errors check to make sure you aren't using illegal characters.
 %% ========================================================================
@@ -55,6 +58,7 @@ nameSplit=nameSplit(~cellfun('isempty',nameSplit));
 dye=nameSplit{1};
 stackSuffix=nameSplit{2};
 
+
 switch nestedOrFlatDirectoryStructure
     case 'flat'
         segStacksFileName=[dye '_' stackSuffix '_SegStacks.mat'];
@@ -66,6 +70,7 @@ end;
 
 
 
+fprintf('stackName: %s \n', stackName)
 fprintf('segStacks File Name: %s \n', segStacksFileName)
 fprintf('wormGaussianFit File Name: %s \n', wormFitFileName)
 
@@ -462,7 +467,8 @@ if exist(segStacksFileName,'file')
         end
         
         % Add in new stats.
-        worms=addStatsToWormGaussian(worms);
+        saveOrNot=false;
+        worms=addStatsToWormGaussian(worms,saveOrNot);
         
         fprintf('Saving worms to:  %s\n',wormFitFileName);
         save(wormFitFileName,'worms');
