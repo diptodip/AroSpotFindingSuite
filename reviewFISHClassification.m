@@ -179,6 +179,9 @@ function reviewFISHClassification_OpeningFcn(hObject, eventdata, handles, vararg
     handles.stackSuffix=stackSuffix;
     handles.posNum=str2num(cell2mat(regexp(stackSuffix,'\d+','match')));
     
+    handles.goodColor=[.3 .3 .7];
+    handles.badColor=[.5 .5 .1];
+    
     handles.wormsFileName=wormGaussianFitName;
     fprintf('Loading %s ... \n',wormGaussianFitName);
     switch nestedOrFlatDirectoryStructure
@@ -346,6 +349,7 @@ function displayImFull(hObject,handles,drawSpotResults)
     %equalize the sides (fill in with black)
     sz=size(currentSlice);
     spotContextIm=zeros(max(sz));
+    boundaryIm=zeros(max(sz));
     if get(data.sliceMerge_button,'Value')==1
         if get(data.laplaceFilter_button,'Value')==1
             spotContextIm(1:sz(1),1:sz(2))=imscale(data.laplaceWorm{data.iCurrentWorm}(:,:,currentZ),99.995);
@@ -360,7 +364,9 @@ function displayImFull(hObject,handles,drawSpotResults)
         end;
     end;
     boundary=bwmorph(data.segMasks{data.iCurrentWorm},'remove');
-    spotContextIm_withBoundary=cat(3,max(0,spotContextIm-.4*boundary),spotContextIm,max(0,spotContextIm-.4*boundary));
+    boundaryIm(1:sz(1),1:sz(2))=boundary;
+    %need to fill with black so that it matches the size of spotContextIM
+    spotContextIm_withBoundary=cat(3,max(0,spotContextIm-.4*boundaryIm),spotContextIm,max(0,spotContextIm-.4*boundaryIm));
     data.spotContext=imshow(spotContextIm_withBoundary);
     
     %Note that if there is a very bright pixel in this, it will tend to make
@@ -571,6 +577,7 @@ function goodSpot_button_Callback(hObject, eventdata, handles)
     % hObject    handle to goodSpot_button (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    goodLineColor=[0 .7 .7];
     currentSpotClassification=handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,:);
     handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,3)=1;
     handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,1)=1;
@@ -597,14 +604,14 @@ function goodSpot_button_Callback(hObject, eventdata, handles)
                 disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
             else
                 handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
-                handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+                handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',goodLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
                 
             end
             
         elseif get(handles.addCorrToTS_button,'Value') %it is a bad spot but was not manually marked as good and add corrections to training set button is on
             handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
             disp('This spot is added into the training set.')
-            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',goodLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
         end;
     else % It is already a good spot. Add to training set.
         disp('This spot is already classified as good spot.  Adding this spot into the training set....')
@@ -612,10 +619,10 @@ function goodSpot_button_Callback(hObject, eventdata, handles)
         
         handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
         disp('This spot is added into the training set.')
-        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',goodLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
     end
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
-    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',goodLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',handles.goodColor);
     handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
     handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
     %setfocus(handles.spotResults);
@@ -630,6 +637,7 @@ function rejectedSpot_button_Callback(hObject, eventdata, handles)
     % hObject    handle to rejectedSpot_button (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    badLineColor=[.7 .7 0];
     currentSpotClassification=handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,:);
     handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,3)=0;
     handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,1)=0;
@@ -655,14 +663,14 @@ function rejectedSpot_button_Callback(hObject, eventdata, handles)
                 disp('This spot is not in the training set.  It is manually curated but not added to the training set.')
             else
                 handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
-                handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+                handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',badLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
                 
             end
             
         elseif get(handles.addCorrToTS_button,'Value') %it is a bad spot but was not manually marked as good and add corrections to training set button is on
             handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
             disp('This spot is added into the training set.')
-            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+            handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',badLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
         end;
         
     else % It is already a bad spot. Add to training set.
@@ -670,10 +678,10 @@ function rejectedSpot_button_Callback(hObject, eventdata, handles)
         handles.allLocs(handles.iCurrentSpot_allLocs,4)=0;
         handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
         disp('This spot is added into the training set.')
-        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+        handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',badLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
     end
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
-    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',badLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',handles.badColor);
     handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
     handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
     
@@ -945,6 +953,11 @@ function addToTrainingSet_button_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
     disp('Adding this spot into the training set....')
     currentSpotClassification=handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,:);
+    if currentSpotClassification(3)==1
+        lineColor=[0 .7 .7];
+    else
+        lineColor=[.7 .7 0];
+    end;
     handles.spotStats{handles.iCurrentWorm}.classification(handles.iCurrentSpot_worms,1)=currentSpotClassification(3);
     handles.allLocs(handles.iCurrentSpot_allLocs,4)=currentSpotClassification(3);
     spotIndex=[handles.posNum handles.iCurrentWorm handles.iCurrentSpot_worms];
@@ -952,10 +965,10 @@ function addToTrainingSet_button_Callback(hObject, eventdata, handles)
     handles.spotsCurated=[handles.spotsCurated;[newSpotRow currentSpotClassification(3)]];
     handles.trainingSet=updateTrainingSet(handles.trainingSet,handles.worms,newSpotRow);
     rectposition=get(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'Position');
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
-    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',[0,.7,.7],'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.trainingLine=line('Xdata',[rectposition(1)+handles.spotSize(1)-1,rectposition(1)+1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',lineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
+    handles.rectangleHandles{handles.iCurrentSpot_allLocs}.curationLine=line('Xdata',[rectposition(1)+1,rectposition(1)+handles.spotSize(1)-1],'Ydata',[rectposition(2)+1,rectposition(2)+handles.spotSize(2)-1],'Color',lineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
     
-    set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]);
+    %set(handles.rectangleHandles{handles.iCurrentSpot_allLocs}.rect,'EdgeColor',[0,.7,.7]); %leave the rectangle alone
     handles.iCurrentSpot_allLocs=min(size(handles.spotBoxLocations,1),handles.iCurrentSpot_allLocs+1);
     handles.iCurrentSpot_worms=handles.allLocs(handles.iCurrentSpot_allLocs,6);
     %setfocus(handles.spotResults);
@@ -1173,7 +1186,7 @@ function handles=drawTheLeftPlane(handles)
     %handles.goodOutlines=[];%this is now going to be a list of NW corners (X,Y) for rectangles
     handles.outLines=zeros(nSpots,2);
     handles.spotIndexImage=zeros(handles.horizSideSize);%size(bkgdSubImage));
-    handles.traingSetIndex=zeros(nSpots,1); % it will be zero if it's not in the training set.
+    handles.trainingSetIndex=zeros(nSpots,1); % it will be zero if it's not in the training set.
     
     %handles.outlines=.5*bwperim(ones(spotSize))+(~bwperim(ones(spotSize)));
     %handles.curated=.5*ones(spotSize);
@@ -1219,7 +1232,7 @@ function handles=drawTheLeftPlane(handles)
             dataMat=imscale(dataMat,90);
         end
         %        rawImage(currentR:currentR+spotSize(1)-1,currentC:currentC+spotSize(2)-1)=dataMat;
-        bkgdSubImage(currentR:currentR+handles.spotSize(1)-1,currentC:currentC+handles.spotSize(2)-1)=dataMat-min(dataMat(:));
+        bkgdSubImage(currentR:currentR+handles.spotSize(1)-1,currentC:currentC+handles.spotSize(2)-1)=(dataMat-min(dataMat(:)))/(.2*max(allDataMat(:)));
         handles.spotIndexImage(currentR:currentR+handles.spotSize(1)-1,currentC:currentC+handles.spotSize(2)-1)=zeros(size(dataMat))+si;
         handles.outLines(si,:)=[colToX(currentC),rowToY(currentR)];
         if allLocs(si,5)==1  %good spot
@@ -1267,36 +1280,36 @@ function handles=drawTheLeftPlane(handles)
     for si=1:nSpots%size(handles.goodOutlines,1)
         %handles.rectangleHandles{iRH}.rect=rectangle('Position',[handles.goodOutlines(si,:) handles.spotSize-.5],'EdgeColor',[.1,.1,.5],'HitTest','off','Parent',handles.spotResults);
         if allLocs(si,5)==1
-            edgeColor=[.1,.1,.5];
+            edgeColor=handles.goodColor;
         else
-            edgeColor=[.5,.5,.1];
+            edgeColor=handles.badColor;
         end
         handles.rectangleHandles{iRH}.rect=rectangle('Position',[handles.outLines(si,:) handles.spotSize-.5],'EdgeColor',edgeColor,'HitTest','off','Parent',handles.spotResults);
         
         %if isequal, draw a line
-        if handles.allLocs(si,4)~=-1 % manually curated
+        if handles.allLocs(si,4)~= -1 % then it is manually curated
             if handles.allLocs(si,5) ==1 % manually curated as a good spot
-                tLineColor=[.1 .1 .5];
+                tLineColor=handles.goodColor;
             else
-                tLineColor=[.5 .5 .1];
+                tLineColor=handles.badColor;
             end
             %handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.goodOutlines(si,1)+1,handles.goodOutlines(si,1)+handles.spotSize(1)-1],'Ydata',[handles.goodOutlines(si,2)+1,handles.goodOutlines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             handles.rectangleHandles{iRH}.curationLine=line('Xdata',[handles.outLines(si,1)+1,handles.outLines(si,1)+handles.spotSize(1)-1],'Ydata',[handles.outLines(si,2)+1,handles.outLines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
             %set(handles.rectangleHandles{iRH}.trainingLine,'UserData',iTrainingSet);%associate trainingSetIndex
             % Check and see if the spot is in the training set. If it's in the
-            % trainingSet, draw a cross
+            % trainingSet, draw an X
             spotInfo=[handles.posNum, handles.iCurrentWorm, handles.allLocs(si,6)];
             if handles.findTraining
-                [~,~,trainingSetIndex]=intersect(spotInfo, handles.trainingSet.spotInfo(:,1:3),'rows');
+                [~,trainingSetIndex,~]=intersect( handles.trainingSet.spotInfo(:,1:3),spotInfo,'rows');
             else
                 trainingSetIndex=[];
             end
             if ~isempty(trainingSetIndex) % order is the same as allLocs
                 handles.trainingSetIndex(si)=trainingSetIndex;
                 if handles.allLocs(si,5) ==1 % good spot in training set
-                    tLineColor=[.1 .1 .5];
+                    tLineColor=handles.goodColor;
                 else
-                    tLineColor=[.5 .5 .1];
+                    tLineColor=handles.badColor;
                 end
                 %handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.goodOutlines(si,1)+1,handles.goodOutlines(si,1)+handles.spotSize(1)-1],'Ydata',[handles.goodOutlines(si,2)+1,handles.goodOutlines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
                 handles.rectangleHandles{iRH}.trainingLine=line('Xdata',[handles.outLines(si,1)+handles.spotSize(1)-1,handles.outLines(si,1)+1],'Ydata',[handles.outLines(si,2)+1,handles.outLines(si,2)+handles.spotSize(2)-1],'Color',tLineColor,'LineWidth',2,'HitTest','off','Parent',handles.spotResults);
