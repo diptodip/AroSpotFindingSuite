@@ -66,6 +66,14 @@ regMax=imregionalmax(im3);
 for zi=1:size(regMax,3)
    %tic 
     [allSpotR,allSpotC,allSpotV]=find(regMax(:,:,zi).*im3(:,:,zi).*mask);%added masking here rather than above so that don't have edge effects
+    %But make sure the spots are not at the very edge of the image.  Since segStacks includes a 3 pixel buffer zone _if_possible_ this should be fine
+    %unless the mask was up against the side of the image such that a buffer zone was not possible.  Then remove those spots
+    toRemove=find(allSpotR<4 | allSpotR<4 | allSpotR > sz(1)-3 | allSpotC > sz(2)-3);
+    allSpotR(toRemove)=[];
+    allSpotC(toRemove)=[];
+    allSpotV(toRemove)=[];
+    
+    
     %fprintf('%d regional maxima in slice %d\n',length(allSpotR),zi);
     allSpotVFilt=zeros(size(allSpotV));
     imFilt=(im3(:,:,zi)-imopen(im3(:,:,zi),se)).*(~bwperim(mask));
