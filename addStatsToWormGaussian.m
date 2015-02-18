@@ -1,4 +1,4 @@
-function worms=addStatsToWormGaussian(worms)
+function worms=addStatsToWormGaussian(worms,saveOrNot)
 %% ========================================================================
 %   Name:       addStatsToWormGaussian.m
 %   Version:    2.5, 25th Apr. 2013
@@ -8,6 +8,9 @@ function worms=addStatsToWormGaussian(worms)
 %       - add new stats, such as delta stats, ratioSigmaXY and randStats to
 %       an exisiting worms structure from wormGaussianFit.mat
 %% ========================================================================
+if nargin==1
+    saveOrNot=true;
+end;
 for j=1:length(worms)
 % Adding the delta stats
 if ~isempty(worms{j}.spotDataVectors)
@@ -38,7 +41,8 @@ end
 worms{j}.version='v2.5';
 end
 end
-
-wormFileName=strrep(worms{1}.segStackFile,'_SegStacks.mat','_wormGaussianFit.mat');
-save(wormFileName,'worms')
+if saveOrNot
+    wormFileName=strrep(worms{1}.segStackFile,'_SegStacks.mat','_wormGaussianFit.mat');
+    save(wormFileName,'worms')
+end;
 end
