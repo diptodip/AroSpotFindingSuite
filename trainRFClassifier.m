@@ -91,9 +91,7 @@ else
 	suffix=p.Results.suffix;
 end;
 if p.Results.readParameterFile && exist('Aro_parameters.m','file')
-
    run('Aro_parameters.m');
-
 else
     ntrees=p.Results.ntrees;
     FBoot=p.Results.FBoot;

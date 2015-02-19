@@ -1,4 +1,5 @@
 function spotStats=classifySpots(worms,varargin)
+
     %% ========================================================================
     %   Name:       classifySpots.m
     %   Version:    2.5.1, 23rd Jul. 2014
@@ -41,7 +42,6 @@ function spotStats=classifySpots(worms,varargin)
     %           - use calculateErrorRange.m to calculate error range.
     %% ========================================================================
     if ~isempty(worms)
-
 
         %read in parameters
         if exist('Aro_parameters.m','file')

@@ -102,7 +102,6 @@ end;
 
 %%%%%%%%%%%%%%%%%%%%%  parameters %%%%%%%%%%%%%%
 
-
 ST = dbstack(2); %Aro_parameters is called from the calling function by run(fullfile(pwd,'Aro_parameters.m'))
 callingFunction=ST(1).name;
 disp([callingFunction ': Reading Aro_parameters file in ' pwd '/']);
