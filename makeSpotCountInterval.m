@@ -13,16 +13,17 @@ function [lbub,distributionSpotCount,spotNumEstimate]=makeSpotCountInterval(spot
 %
 %   Files required:     *spotStats.mat file or trainingSet*.mat file
 %                           File name examples: cy5_Pos0_spotStats.mat
-%                                           
+%
 %   Files generated:    none
-%   Output:             3 variables. 
+%   Output:             3 variables.
 %                            - a vector with the lower and upper bound of spot counts
 %                            - the full distribution of these counts
 %                            - a point estimate of the spot number
-%                       
+%
 %% ========================================================================
 if exist('Aro_parameters.m','file')
-    run('Aro_parameters');
+
+   run('Aro_parameters.m');
 else
     nBoots=1000;
 end;
@@ -60,4 +61,3 @@ if sum(manuallyCurated)>0
     spotNumEstimate=spotNumEstimate+sum(spotStatsOrTrainingSetRF.classification(manuallyCurated,1)==1);
 end;
 end
-

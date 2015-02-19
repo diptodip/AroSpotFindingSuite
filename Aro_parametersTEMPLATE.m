@@ -14,18 +14,98 @@
 %                ones it needs based on the value of callingFunction which
 %                is set in the calling function and is the function's name
 %
+%				NestedDirectoryStructure
+%					tells all functions where to find things
+%					assumes that you are running it from the top directory
+%					images are in ImageData by dye
+%					Analysis in analysis folder
+%
 %
 %	NOTE: This is a template file.  Copy this file into the top directory where
 %			the functions will be run from.  Adjust anything that needs adjusting.
 %			Name it Aro_parameters.m
 
 
+%%%%%%%%%%%%%%%%% directory structure %%%%%%%%%%%%%%%%%
+
+% Is the directory file structure flat or nested?  If flat, then everything is in the same directory (the file list gets big)
+nestedOrFlatDirectoryStructure = 'nested';  % 'flat' is the other option
+
+% What are the dyes that are being used?  This should be a cell array. These will
+% be the directory names where the images are and also the names of directories under spotStats, segStacks, wormGaussianFit, etc.
+dyesUsed={'a594','cy','tmr'};
+isdapi='dapi'; %or '' if no dapi
+
+if strcmp(nestedOrFlatDirectoryStructure,'nested')
+    topdir=pwd;
+    ImageDir='ImageData';
+
+    SegmentationMaskDir= 'SegmentationMasks';
+    if ~exist(SegmentationMaskDir,'dir')
+        mkdir(SegmentationMaskDir);
+    end;
+
+
+    AnalysisDir= 'Analysis1';
+    if ~exist(AnalysisDir,'dir')
+        mkdir(AnalysisDir);
+    end;
+
+    PlotDir=[AnalysisDir filesep 'Plots'];
+    if ~exist(PlotDir,'dir')
+        mkdir(PlotDir);
+    end;
+
+    WormGaussianFitDir=[AnalysisDir filesep 'WormGaussianFit'];
+    if ~exist(WormGaussianFitDir,'dir')
+        mkdir(WormGaussianFitDir);
+        for i=1:length(dyesUsed)
+            mkdir([WormGaussianFitDir filesep dyesUsed{i}]);
+        end;
+    end;
+
+    SpotStatsDir=[AnalysisDir filesep 'SpotStats'];
+    if ~exist(SpotStatsDir,'dir')
+        mkdir(SpotStatsDir);
+        for i=1:length(dyesUsed)
+            mkdir([SpotStatsDir filesep dyesUsed{i}]);
+        end;
+    end;
+
+    SegStacksDir=[AnalysisDir filesep 'SegStacks'];
+    if ~exist(SegStacksDir,'dir')
+        mkdir(SegStacksDir);
+        for i=1:length(dyesUsed)
+            mkdir([SegStacksDir filesep dyesUsed{i}]);
+        end;
+        if ~isempty(isdapi)
+            mkdir([SegStacksDir filesep isdapi]);
+        end;
+    end;
+
+    TrainingSetDir=[AnalysisDir filesep 'TrainingSets'];
+    if ~exist(TrainingSetDir,'dir')
+        mkdir(TrainingSetDir);
+    end;
+else
+    topdir=''; %want relative paths without extra cruff
+    ImageDir=topdir;
+    WormGaussianFitDir=topdir;
+    SpotStatsDir=topdir;
+    SegStacksDir=topdir;
+    SegmentationMaskDir=topdir;
+    TrainingSetDir=topdir;
+    PlotDir=topdir;
+end;
+
 
 
 %%%%%%%%%%%%%%%%%%%%%  parameters %%%%%%%%%%%%%%
 
-ST = dbstack(2); %This script is called from a function as run('Aro_parameters.m')
+
+ST = dbstack(2); %Aro_parameters is called from the calling function by run(fullfile(pwd,'Aro_parameters.m'))
 callingFunction=ST(1).name;
+disp([callingFunction ': Reading Aro_parameters file in ' pwd '/']);
 
 switch callingFunction
     case 'trainRFClassifier'
@@ -57,12 +137,12 @@ switch callingFunction
         stepFactor=1;  %1 or more
         %%%%%%%%
         % What should the confidence interval width be?
-        intervalWidth=95;   % (0 < < 100] 
-        
+        intervalWidth=95;   % (0 < < 100]
+
     case 'classifySpots'
         % What should the confidence interval width be?
-        intervalWidth=95;% (0 < < 100] 
-        
+        intervalWidth=95;% (0 < < 100]
+
     case 'evalFISHStacks'
         % This function builds the list of regional maxima in an image
         % stack to even consider
@@ -91,8 +171,16 @@ switch callingFunction
     case 'makeSpotCountInterval'
         %bootstrap repetitions for the interval
         nBoots=1000; %should be a large number
+    case 'createSpotTrainingSet'
+        statsToUse = {'intensity';'totalHeight';'estimatedFloor';'scnmse';'scnrmse';'scr';'scd';'sce';...
+            'prctile_50';'prctile_60';'prctile_70';'prctile_80';'prctile_90';...
+            'fraction_center';'fraction_plusSign';'fraction_3box';'fraction_5star';'fraction_5box';'fraction_7star';'fraction_3ring';...
+            'raw_center';'raw_plusSign';'raw_3box';'raw_5star';'raw_5box';'raw_7star';'raw_3ring';'total_area';...
+            'sv1';'sv2';'sv3';'sv4';'sv5';...
+            'absDeltaPlusSign';'deltaPlusSign';'absPlusSignDelta';'plusSignPvalue';...
+            'absDeltaStarSign';'deltaStarSign';'absStarSignDelta';'starSignPvalue';...
+            'absDeltaCenterBox';'deltaCenterBox';'absCenterBoxDelta';'centerBoxPvalue';'ratioSigmaXY';...
+            'totalAreaRandPvalue';'cumSumPrctile90RP';'cumSumPrctile70RP';'cumSumPrctile50RP';'cumSumPrctile30RP';...
+            'cumSumPrctile90';'cumSumPrctile70';'cumSumPrctile50';'cumSumPrctile30'};
     otherwise
 end;
-
-
-

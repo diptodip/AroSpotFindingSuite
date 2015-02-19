@@ -18,7 +18,10 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 %       re-allocate the memory available in MatLab.
 %       2013 Apr. 25th: add in new stats
 %       2013 May 7th: fix the edge spot problem
-
+%       2015 16 Feb: The edge spot problem is still a problem.  Don't want any spots that go off the edge of the image. Need full 7x7
+%                    So have mask be a little bigger than the object.  Don't take regional maxima outside the mask, but let the box go outside it.
+%                   Because of the way segStacks is made, this means that segstacks has to be a little bigger than the actual object.
+%                   So expand segstacks 3 pixels on each side if possible. but don't expand the segmask
 %   Note: Do not use spaces in file names.  Use underscores or camelCase.
 %         If you are getting file read errors check to make sure you aren't using illegal characters.
 %% ========================================================================
@@ -31,10 +34,10 @@ function evalFISHStacks(stackName,varargin)  %nameMod
 versionName='v2.5';
 
 if exist('Aro_parameters.m','file')
-    run('Aro_parameters');
+   run('Aro_parameters.m');
 else
-    
-    
+
+
     cutoffPercentile=90;
     cutoffStatisticValue=.7;
     %cutoffPercentile=90; % for yeast data
@@ -54,8 +57,20 @@ nameSplit=regexp(stackName,'\.','split');
 nameSplit=nameSplit(~cellfun('isempty',nameSplit));
 dye=nameSplit{1};
 stackSuffix=nameSplit{2};
-segStacksFileName=[dye '_' stackSuffix '_SegStacks.mat'];
-wormFitFileName=[dye '_' stackSuffix '_wormGaussianFit.mat'];
+
+
+switch nestedOrFlatDirectoryStructure
+    case 'flat'
+        segStacksFileName=[dye '_' stackSuffix '_SegStacks.mat'];
+        wormFitFileName=[dye '_' stackSuffix '_wormGaussianFit.mat'];
+    case 'nested'
+        segStacksFileName=fullfile(SegStacksDir,dye,[dye '_' stackSuffix '_SegStacks.mat']);
+        wormFitFileName=fullfile(WormGaussianFitDir,dye,[dye '_' stackSuffix '_wormGaussianFit.mat']);
+end;
+
+
+
+fprintf('stackName: %s \n', stackName)
 fprintf('segStacks File Name: %s \n', segStacksFileName)
 fprintf('wormGaussianFit File Name: %s \n', wormFitFileName)
 
@@ -63,7 +78,7 @@ fprintf('wormGaussianFit File Name: %s \n', wormFitFileName)
 totalSpotsTested=0;
 if exist(segStacksFileName,'file')
     % segImages have been created.
-    
+
     spotSize=[7 7];
     offset=floor((spotSize-1)/2);
     %disp(offset);
@@ -74,20 +89,20 @@ if exist(segStacksFileName,'file')
         wormNum=length(segStacks);     % Check the number of worms
         stackH=size(segStacks{1},3);
         disp([num2str(wormNum) ' worms in stack. ' num2str(stackH) ' slices']);
-        
-        
+
+
         % Correct for bleaching (and apply laplacian-gaussian filter on it if
         % necessary)....
         disp('Preprocess them for finding regional maxima ....')
         [segStacks,bleachFactors]=correctBleachAndFilter(segStacks);
         totalTime=0;
         worms=cell(wormNum,1);
-        
+
         for ci=1:wormNum
             if ~exist('segStacks','var')
                 load segStacks_tmp
             end
-            
+
             %try
             worms{ci}.version=versionName;
             worms{ci}.segStackFile=segStacksFileName;
@@ -96,10 +111,10 @@ if exist(segStacksFileName,'file')
             worms{ci}.cutoffStatisticValue=cutoffStatisticValue;
             worms{ci}.cutoffPercentile=cutoffPercentile;
             worms{ci}.bleachFactors=bleachFactors(:,ci);
-            
+
             wormImage=segStacks{ci};
             wormMask=segMasks{ci};
-            
+
             worms{ci}.regMaxSpots=[];%4 element vector [r c z value]
             spotInfo={};
             %spotInfo=[];
@@ -108,8 +123,8 @@ if exist(segStacksFileName,'file')
             count=1;
             fprintf('%d regional maxima in %s image of worm %d in position %s. \n',length(spotRSorted3D), dye, ci, stackSuffix);
             fprintf('# Putative spots evaluated: ');
-            
-            
+
+
             for zi=1:stackH
                 %fprintf('Doing slice %d: ',zi);
                 spotStatsFilt=[];
@@ -119,13 +134,13 @@ if exist(segStacksFileName,'file')
                 spotVSorted=spotVSorted3D(spotZSorted3D==zi);
                 allSpotVSortedFilt=spotVFiltSorted3D(spotZSorted3D==zi);
                 %fprintf('spotRFilt size: %d', size(spotRFilt));
-                
+
                 %This adds one slice at a time
                 worms{ci}.regMaxSpots=[worms{ci}.regMaxSpots;[spotRFilt,spotCFilt,ones(size(spotRFilt))*zi,spotVSorted,allSpotVSortedFilt]];
                 tic
                 if ~isempty(spotRFilt)
                     runningTotal=0;
-                    
+
                     for si=1:length(spotRFilt)
                         %                 if mod(si,200)==0
                         %                     disp(['Doing spot ' num2str(si)]);
@@ -139,7 +154,7 @@ if exist(segStacksFileName,'file')
                         WC=max(1,spotCFilt(si)-offset(2));
                         % Check the right border
                         EC=min(size(wormMask,2),spotCFilt(si)+offset(2));
-                        
+
                         dataMat=zeros(spotSize); % fill in the out of border pixels with zeros.
                         dataColumn=zeros(spotSize(1),spotSize(2),stackH);
                         % position the dataMat
@@ -152,7 +167,7 @@ if exist(segStacksFileName,'file')
                         else
                             dataMatRRange=[1:spotSize(1)];
                         end
-                        
+
                         if WC==1
                             dataMatCRange=[spotSize(2)-w:spotSize(2)];
                         elseif EC==size(wormMask,2)
@@ -160,28 +175,28 @@ if exist(segStacksFileName,'file')
                         else
                             dataMatCRange=[1:spotSize(2)];
                         end
-                        
+
                         dataMat(dataMatRRange,dataMatCRange)=wormImage(NR:SR,WC:EC,zi);
                         dataColumn(dataMatRRange,dataMatCRange,:)=wormImage(NR:SR,WC:EC,:);
                         regMaxDataMat=imregionalmax(dataMat(2:6,2:6));
                         %dataMat=wormLfish(NR:SR,WC:EC,zi);
-                        
+
                         %also, sometimes there is a bad pixel and so in the middle
                         %of the spot there is a really bright one and a zero...this
                         %is too often counted as a spot.  so eliminate those
                         [minR,minC]=find(dataMat==min(dataMat(dataMat(:)>0)));
                         %fprintf('min(maskMat(:)=%f and norm=%f and nRegmax = %d for spot %d\n',min(maskMat(:)),norm([4-minR(1),4-minC(1)]),sum(regMaxDataMat(:)),si);
                         if  norm([4-minR(1),4-minC(1)])>1.5 && sum(regMaxDataMat(:))<=3%can't be more than 3 regional maxima in the 5x5 box
-                            
+
                             %fprintf('Trying spot %d now\n',si);
-                            
+
                             %%%%%
                             % 24 April 2012
                             %the spot information will now be stored in matrices at the worm level and spotInfo will hold the row number
                             %One vector for each statistic.  Not as compact as a matrix but is robust against adding and deleting statistics
                             %
                             %The upshot is that here, spotInfo needs to change to spotDataVectors which is a struct with the various vectors
-                            
+
                             %If this is the first spot, initialize these dataVectors -
                             %We want to preinitialize so that it isn't growing the vectors by adding one at a time
                             %But this is tricky because we don't want to overdo it and defeat the memory savings.
@@ -190,16 +205,16 @@ if exist(segStacksFileName,'file')
                             %Note that I also split locations from a nested struct to two different matrices.
                             %This way all the fields in spotDataVectors are at the same level making it easier to loop over them
                             nToAllocate=floor(length(spotRSorted3D)/4);
-                            
+
                             if ~exist('spotDataVectors','var')
-                                
+
                                 spotDataVectors=struct(...
                                     'locationStack',zeros(nToAllocate,3),...
                                     'rawValue',zeros(nToAllocate,1),...
                                     'filteredValue',zeros(nToAllocate,1),...
                                     'spotRank',zeros(nToAllocate,1),...
                                     'dataMat',zeros(nToAllocate,7,7));
-                                
+
                             end
                             if ~isfield(spotDataVectors,'locationStack')
                                 %spotDataVectors.locationWorm=zeros(nToAllocate,3);
@@ -217,30 +232,30 @@ if exist(segStacksFileName,'file')
                                 spotDataVectors.filteredValue=[spotDataVectors.filteredValue;zeros(nToAllocate,1)];
                                 spotDataVectors.spotRank=[spotDataVectors.spotRank;zeros(nToAllocate,1)];
                                 spotDataVectors.dataMat=[spotDataVectors.dataMat;zeros(nToAllocate,7,7)];
-                                
+
                             end
-                            
-                            
-                            
+
+
+
                             %Discard the coordination in the whole picture
                             %spotDataVectors.locationWorm(count,:)=[spotRFilt(si) spotCFilt(si) zi];
                             %spotInfo{count}.locations.worm=[spotRFilt(si) spotCFilt(si) zi];
-                            
+
                             %locationWormXY=[colToX(spotCFilt(si)) rowToY(spotRFilt(si))];
                             %newcoords=translateToNewCoordinates(locationWormXY,bb.BoundingBox,'StoL');
                             %spotDataVectors.locationStack(count,:)=[yToRow(newcoords(2)) xToCol(newcoords(1)) zi];
                             spotDataVectors.locationStack(count,:)=[spotRFilt(si) spotCFilt(si) zi];
                             %spotInfo{count}.locations.stack=[yToRow(newcoords(2)) xToCol(newcoords(1)) zi];
-                            
+
                             spotDataVectors.rawValue(count)=spotVSorted(si);
                             %spotInfo{count}.rawValue=spotVSorted(si);
-                            
+
                             spotDataVectors.filteredValue(count)=allSpotVSortedFilt(si);
                             %spotInfo{count}.filteredValue=allSpotVSortedFilt(si);
-                            
+
                             spotDataVectors.spotRank(count)=si;
                             %spotInfo{count}.spotRank=si;
-                            
+
                             spotDataVectors.dataMat(count,:,:)=dataMat;
                             %disp(size(spotDataVectors.dataMat))
                             %spotInfo{count}.dataMat=dataMat;
@@ -251,19 +266,19 @@ if exist(segStacksFileName,'file')
                             %spotInfo{count}.stackSuffix=stackSuffix;
                             %spotInfo{count}.stackName=stackName;
                             %spotInfo{count}.wormNumber=ci;
-                            
-                            
+
+
                             try
-                                
+
                                 %moved to 1p2
                                 %old way:
                                 %tgs=calculateFISHStatistics(dataMat,spotRFilt(si)-NR+1,spotCFilt(si)-WC+1,adjacentSlices);      %nameMod
                                 tgs=calculateFISHStatistics(dataColumn,spotRFilt(si)-NR+1,spotCFilt(si)-WC+1,zi,0,bleachFactors(:,ci));       %nameMod
                                 %disp('just got stats from calculateFISHStatistics_1p4 on line 206');
                                 %disp(tgs.statValues);
-                                
+
                                 statFields=fieldnames(tgs.statValues);
-                                
+
                                 %If this is the first spot, initialize these dataVectors -
                                 %We want to preinitialize so that it isn't growing the vectors by adding one at a time
                                 %But this is tricky because we don't want to overdo it and defeat the memory savings.
@@ -290,10 +305,10 @@ if exist(segStacksFileName,'file')
                                         end;
                                     end;
                                 end;
-                                
-                                
-                                
-                                
+
+
+
+
                                 for iFN=1:size(statFields,1)
                                     if ~strcmp(statFields{iFN},'dataFit')%everything else is a single number
                                         spotDataVectors.(statFields{iFN})(count)=tgs.statValues.(statFields{iFN});
@@ -302,9 +317,9 @@ if exist(segStacksFileName,'file')
                                     end;
                                 end;
                                 %spotInfo{count}.stat=tgs;
-                                
-                                
-                                
+
+
+
                                 if mod(count,100)==0
                                     fprintf('%d  ',count);
                                 end;
@@ -334,11 +349,11 @@ if exist(segStacksFileName,'file')
                                 spotStatsFiltAmp=[spotStatsFiltAmp;0];
                             end;
                             %%%%%%%%%%%%%%%%%%%
-                            
+
                             %stopping criterion%do at least stopN
                             %                 maxPreviousN=max(spotStatsFilt(max(1,si-stopN):si));
                             %                 medianPreviousN=median(spotStatsFilt(max(1,si-stopN):si));
-                            
+
                             %3/15/10 adjusted percentile from 90 to 60.
                             %stopN is 30 so this means that 12 (instead of 3) of the last
                             %30 have to be less than 0.9...no isn't
@@ -358,20 +373,20 @@ if exist(segStacksFileName,'file')
                             if si>=stopN
                                 %fprintf('prcPreviousN = %f at spot
                                 %%d\n',prcPreviousN,si);
-                                
+
                                 if prcPreviousN<cutoffStatisticValue %e.g. if 70% of the last 15 spots are less than .7, then stop
                                     %disp('Breaking');
                                     break
                                 end;
                             end;
                             %%%%%%%%%%%%%%%%%%%%%%
-                            
+
                         end;
-                        
+
                     end;%end of for si in spotRFilt
                 else
                     %disp('No regional maxima in this slice/worm');
-                    
+
                 end;%if isempty(spotRFilt)
                 %disp(spotStatsFilt);
                 tend=toc;
@@ -379,29 +394,29 @@ if exist(segStacksFileName,'file')
                 totalSpotsTested=totalSpotsTested+length(spotStatsFilt);
                 %disp(['Worm ' num2str(ci) ' slice ' num2str(zi) ':' num2str(tend/length(spotStatsFilt)) ' per spot for ' num2str(length(spotStatsFilt)) ' spots done in ' num2str(tend) ' seconds. ' num2str(totalTime) ' total seconds of ' num2str(length(spotRFilt)) ' potential spots in slice']);
             end;%for zi=1:size(stack)
-            
+
             count=count-1;%This needs to be done because of the way count was used and incremented
             %disp(size(spotDataVectors.dataFit))
             %disp(size(spotDataVectors.dataMat))
-            
+
             % Remove all spots or rows that don't have stats evaluated
             if exist('spotDataVectors','var')
                 spotNum=length(spotDataVectors.rawValue);
                 statsToUse=fieldnames(spotDataVectors);
                 testData=zeros(spotNum,length(statsToUse));
-                
+
                 for stati=1:length(statsToUse)
                     if ~sum(strcmp(statsToUse{stati},{'dataFit','dataMat'}))
                         width=size(spotDataVectors.(statsToUse{stati}),2);
                         testData(:,stati:(stati+width-1))=spotDataVectors.(statsToUse{stati});
                     end
                 end
-                
-                
+
+
                 % Make sure to remove spots that don't have stats evaluated.
                 zeroLines=(testData~=0);
                 nullStatsIndex=(sum(zeroLines,2)==0); % If all stats equal zero, index=1;
-                
+
                 for stati=1:length(statsToUse)
                     if sum(strcmp(statsToUse{stati},{'dataFit','dataMat'}))
                         spotDataVectors.(statsToUse{stati})=spotDataVectors.(statsToUse{stati})(nullStatsIndex~=1,:,:);
@@ -411,8 +426,8 @@ if exist(segStacksFileName,'file')
                 end
                 spotNum=length(spotDataVectors.rawValue);
                 spotDataVectors.spotInfoNumberInWorm=[1:spotNum]'; %Unique ID for each spots
-                
-                
+
+
                 %add to the worm
                 worms{ci}.spotDataVectors=spotDataVectors;
             else
@@ -420,12 +435,12 @@ if exist(segStacksFileName,'file')
             end
             %worms{ci}.spotInfo=spotInfo;
             clear('spotDataVectors');
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
             worms{ci}.goodWorm=1;
             %        worms{ci}.quickAndDirtyStats=quickAndDirtyStats;
             %9 July2011.  added mfilename so can know which version generated
@@ -450,13 +465,14 @@ if exist(segStacksFileName,'file')
             %    end
             %end
         end
-        
+
         % Add in new stats.
-        worms=addStatsToWormGaussian(worms);
-        
+        saveOrNot=false;
+        worms=addStatsToWormGaussian(worms,saveOrNot);
+
         fprintf('Saving worms to:  %s\n',wormFitFileName);
-        save(fullfile(pwd,wormFitFileName),'worms');
-        
+        save(wormFitFileName,'worms');
+
         disp(['All worms in ' dye ' ' stackSuffix ' are done.' ])
         if exist('tmp.mat','file')
             delete tmp.mat
@@ -469,5 +485,3 @@ end
 
 
 end
-
-

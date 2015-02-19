@@ -13,15 +13,14 @@ sz = size(ims);
 
 outims = zeros(sz);
 
-fprintf('Processing image stack, run number ');
+%fprintf('Processing image stack, run number ');
 
 ims = medianfilter(ims);
 outims = ims;
 
 for i = 1:npasses
-  fprintf('%d ',i);
   outims = imfilter(outims,h4,'replicate');
   outims = (outims>0).*outims;
 end;
 
-fprintf('\n');
+end

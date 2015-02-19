@@ -905,7 +905,7 @@ if size(handles.dataStructure.goodSpots,2)>0
     goodSpotValueInformation=handles.sortedSpotData.values(ispotListGood);
     %Note that the below works because spots and rejected spots are a proper
     %subset of all the candidates in spotListSorted(:,1:3)
-    handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  handles.sortedSpotData.values(ispotListGood)  handles.sortedSpotData.wormNumber(ispotListGood) handles.sortedSpotData.spotInfoNumberInWorm(ispotListGood)];
+    handles.dataStructure.goodSpots=[handles.dataStructure.goodSpots(igood,:)  goodSpotValueInformation  goodSpotInfoInformation];
 end;
 if size(handles.dataStructure.rejectedSpots,2)>0
     [~,ispotListRej,irej]=intersect(spotListSorted,handles.dataStructure.rejectedSpots,'rows');
@@ -913,7 +913,7 @@ if size(handles.dataStructure.rejectedSpots,2)>0
     rejectedSpotValueInformation=handles.sortedSpotData.values(ispotListRej);
     %Note that the below works because spots and rejected spots are a proper
     %subset of all the candidates in spotListSorted(:,1:3)
-    handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  handles.sortedSpotData.values(ispotListRej)  handles.sortedSpotData.wormNumber(ispotListRej) handles.sortedSpotData.spotInfoNumberInWorm(ispotListRej)];
+    handles.dataStructure.rejectedSpots=[handles.dataStructure.rejectedSpots(irej,:)  rejectedSpotValueInformation  rejectedSpotInfoInformation];
 end;
 
 
@@ -1548,9 +1548,9 @@ else
     %c16Y=rowToY(max(1,blueSpots(iCurrentSpot,1)-floor(c16H/2)));
     c16X=colToX(max(1,min(blueSpots(iCurrentSpot,2)-floor(c16W/2),nColsInImage-c16W+1)));
     c16Y=rowToY(max(1,min(blueSpots(iCurrentSpot,1)-floor(c16H/2),nRowsInImage-c16H+1)));
-    disp(blueSpots(iCurrentSpot,:));
-    disp([c16X,c16Y]);
-    disp([nRowsInImage,nColsInImage,c16W,c16H]);
+%     disp(blueSpots(iCurrentSpot,:));
+%     disp([c16X,c16Y]);
+%     disp([nRowsInImage,nColsInImage,c16W,c16H]);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end;

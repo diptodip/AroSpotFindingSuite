@@ -64,7 +64,7 @@ function trainingSet=trainRFClassifier(trainingSet,varargin)
 %           - use calibrated probability estimates for prediction interval
 %           estimation.
 %		2014 Aug 9th:
-%			- Changed input to param-value pairs. Added option to skip the variable and 
+%			- Changed input to param-value pairs. Added option to skip the variable and
 %			feature selection to save time when in the middle of reviewFISHClassification
 %% =============================================================
 tic
@@ -85,13 +85,15 @@ p.parse(trainingSet,varargin{:});
 trainingSet=p.Results.trainingSet;
 
 if isempty(p.Results.suffix)
-    suffix=strrep(trainingSet.FileName,'trainingSet_','');
-    suffix=strrep(suffix,'.mat','');
+    [~,suffix,~]=fileparts(trainingSet.FileName);
+    suffix=strrep(suffix,'trainingSet_','');
 else
 	suffix=p.Results.suffix;
 end;
 if p.Results.readParameterFile && exist('Aro_parameters.m','file')
-    run('Aro_parameters');
+
+   run('Aro_parameters.m');
+
 else
     ntrees=p.Results.ntrees;
     FBoot=p.Results.FBoot;
@@ -173,7 +175,7 @@ if runVarFeatureSel %if 0 this saves time (e.g. in the middle of reviewFISHClass
 				mBest=m;
 			end
 		end
-	
+
 		oobErrors(k,:)=[m,errorCurr];
 		fprintf('%g \t %g \t %g \n', m, errorCurr, Improve)
 		k=k+1;
@@ -223,8 +225,8 @@ end
 trainingSet.RF.spotTreeProbs=spotTreeProbs;
 Probs=calibrateProbabilities(mean(spotTreeProbs,2));
 trainingSet.RF.ProbEstimates=Probs;
-trainingSet.RF.RFfileName=[suffix '_RF.mat'];
-save(fullfile(pwd,[suffix '_RF.mat']),'Trees','BagIndices','-v7.3');
+trainingSet.RF.RFfileName=fullfile(TrainingSetDir,[suffix '_RF.mat']);
+save(trainingSet.RF.RFfileName,'Trees','BagIndices','-v7.3');
 trainingSet.RF.ErrorRate= mean((trainingSet.RF.ProbEstimates>0.5)~=trainSetData.Y);
 trainingSet.RF.SpotNumTrue=sum(trainSetData.Y);
 trainingSet.RF.SpotNumEstimate=sum(Probs>0.5);
@@ -238,7 +240,7 @@ trainingSet.RF.SpotNumDistribution=dist;
 
 %% Include other fields
 trainingSet.RF.Margin=abs(trainingSet.RF.ProbEstimates*2-1);
-trainingSet.RF.FileName=['trainingSet_' suffix '.mat'];
+trainingSet.RF.FileName=fullfile(TrainingSetDir,['trainingSet_' suffix '.mat']);
 trainingSet.RF.ResponseY=trainingSet.RF.ProbEstimates>0.5;
 
 %% version check
@@ -251,12 +253,7 @@ end
 
 
 %% Save the training set
-save(fullfile(pwd,['trainingSet_' suffix '.mat']),'trainingSet','-v7.3')
+save(fullfile(TrainingSetDir,['trainingSet_' suffix '.mat']),'trainingSet','-v7.3')
 fprintf('Finished training the random forest in %g minutes.\n', toc/60)
 
 end
-
-
-
-
-
