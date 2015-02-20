@@ -201,6 +201,7 @@ function reviewFISHClassification_OpeningFcn(hObject, eventdata, handles, vararg
             load(fullfile(SpotStatsDir,dye,spotStatsFileName));
     end;
     handles.spotStats=spotStats;
+    handles.spotStatsFileName=spotStatsFileName;
     clear spotStats
     
     
@@ -498,18 +499,16 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
                     disp('Saving the training set and updated spot stats....')
                     trainingSet=handles.trainingSet;
                     save(handles.trainingSet.FileName,'trainingSet'); %directory structure already in it
-                    [dye, ~, wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{1}.segStackFile);
                     worms=handles.worms;
                     spotStats=handles.spotStats;
-                    switch handles.nestedOrFlatDirectoryStructure
-                        case 'flat'
-                            save(wormGaussianFitName,'worms');
-                            save(spotStatsFileName,'spotStats');
-                        case 'nested'
-                            save(fullfile(handles.WormGaussianFitDir,dye,wormGaussianFitName));
-                            save(fullfile(handles.SpotStatsDir,dye,spotStatsFileName));
-                    end;
-                    disp(spotStats{1});
+    switch handles.nestedOrFlatDirectoryStructure
+        case 'flat'
+            save(handles.wormsFileName,'worms');
+            save(handles.spotStatsFileName,'spotStats');
+        case 'nested'
+            save(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName),'worms');
+            save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'sptoStats');
+    end;                    disp(spotStats{1});
                     disp(spotStatsFileName);
                     delete(handles.figure1)
             end
@@ -518,19 +517,17 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
             disp('Saving the training set and updated spot stats....')
             trainingSet=handles.trainingSet;
             save(handles.trainingSet.FileName,'trainingSet');%directory structure already in it
-            [dye, ~, wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{1}.segStackFile);
-            worms=handles.worms;
+             worms=handles.worms;
             spotStats=handles.spotStats;
             %disp(spotStats{1});
-            switch handles.nestedOrFlatDirectoryStructure
-                case 'flat'
-                    save(wormGaussianFitName,'worms');
-                    save(spotStatsFileName,'spotStats');
-                case 'nested'
-                    save(fullfile(handles.WormGaussianFitDir,dye,wormGaussianFitName));
-                    save(fullfile(handles.SpotStatsDir,dye,spotStatsFileName));
-            end;
-            delete(handles.figure1)
+    switch handles.nestedOrFlatDirectoryStructure
+        case 'flat'
+            save(handles.wormsFileName,'worms');
+            save(handles.spotStatsFileName,'spotStats');
+        case 'nested'
+            save(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName),'worms');
+            save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'spotStats');
+    end;            delete(handles.figure1)
             disp('Rerunning randomForest with the latest amendments');
             handles.trainingSet=trainRFClassifier(handles.trainingSet);  %nameMod
             disp('Redo classification of the spots for this stack...')
@@ -1045,16 +1042,15 @@ function saveData_button_Callback(hObject, eventdata, handles)
     trainingSet=handles.trainingSet;
     save(handles.trainingSet.FileName,'trainingSet'); %directory structure already incorporated
     %%%%%%%%%%%%%%%%%%%%
-    [dye, ~, wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{1}.segStackFile);
     worms=handles.worms;
     spotStats=handles.spotStats;
     switch handles.nestedOrFlatDirectoryStructure
         case 'flat'
-            save(wormGaussianFitName,'worms');
-            save(spotStatsFileName,'spotStats');
+            save(handles.wormsFileName,'worms');
+            save(handles.spotStatsFileName,'spotStats');
         case 'nested'
-            save(fullfile(handles.WormGaussianFitDir,dye,wormGaussianFitName));
-            save(fullfile(handles.SpotStatsDir,dye,spotStatsFileName));
+            save(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName),'worms');
+            save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'spotStats');
     end;
     
     disp('Data saved.')
@@ -1137,14 +1133,13 @@ function undoAll_Callback(hObject, eventdata, handles)
     handles.trainingSet=trainingSet;
     clear trainingSet
     
-    [dye,~ , wormGaussianFitName, ~,spotStatsFileName]=parseStackNames(handles.worms{handles.iCurrentWorm}.segStackFile);
     switch handles.nestedOrFlatDirectoryStructure
         case 'flat'
-            load(wormGaussianFitName);
-            load(spotStatsFileName);
+            load(handles.wormsFileName);
+            load(handles.spotStatsFileName);
         case 'nested'
-            load(fullfile(handles.WormGaussianFitDir,dye,wormGaussianFitName));
-            load(fullfile(handles.SpotStatsDir,dye,spotStatsFileName));
+            load(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName));
+            load(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName));
     end;
     
     
