@@ -132,11 +132,15 @@ function createSegImages(stackFileType,varargin)
                             imageFileName=fullfile(ImageDir,dye{di},[dye{di} stackSuffix '.stk']);
                     end;
                     if exist(imageFileName,'file')
+                        try
                         stackInfo=readmm(imageFileName);
                         stack=stackInfo.imagedata;
                         %clear stackInfo
                         stack=double(stack);
                         stackExists=true;
+                        catch ME
+                            fprintf('Failed to open file %s .', imageFileName);
+                        end;
                     else
                         fprintf('Failed to find the file %s .', imageFileName)
                     end
@@ -149,11 +153,20 @@ function createSegImages(stackFileType,varargin)
                     end;
                     
                     if exist(imageFileName,'file') %tif
+
+                          try  
                         stack=double(loadtiff(imageFileName));
                         stackExists=true;
+                          catch ME
+                              fprintf('Failed to open the file %s .', imageFileName)
+                          end;
                     elseif exist([imageFileName 'f'],'file') %tiff
+                        try
                         stack=loadtiff([imageFileName 'f']);
                         stackExists=true;
+                        catch ME
+                            fprintf('Failed to open the file %s .', imageFileName)
+                        end;
                     else
                         fprintf('Failed to find the file %s .', imageFileName)
                     end
