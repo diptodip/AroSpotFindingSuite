@@ -74,7 +74,7 @@ p.addRequired('trainingSet',@isstruct);
 p.addParamValue('suffix',[],@isstr);
 p.addParamValue('ntrees',1000,@isscalar);
 p.addParamValue('FBoot',1,@isscalar);
-p.addParamValue('runVarFeatureSel',1,@isscalar);
+p.addParamValue('runVarFeatureSel',true,@islogical);
 p.addParamValue('readParameterFile',true,@islogical);
 p.addParamValue('nTreeTry',500,@isscalar);
 p.addParamValue('improve',.01,@isscalar);
@@ -95,14 +95,14 @@ if p.Results.readParameterFile && exist('Aro_parameters.m','file')
 else
     ntrees=p.Results.ntrees;
     FBoot=p.Results.FBoot;
-    runVarFeatureSel=p.Results.runVarFeatureSel;
     nTreeTry=p.Results.nTreeTry;
     improve=p.Results.improve;
     stepFactor=p.Results.stepFactor;
     intervalWidth=p.Results.intervalWidth;
     percentileThresholdForOOBPermutedVarDeltaError=p.Results.percentileThresholdForOOBPermutedVarDeltaError;
 end;
-clear p;
+runVarFeatureSel=p.Results.runVarFeatureSel;
+
 
 if isfield(trainingSet,'RF') && runVarFeatureSel
     trainingSet=rmfield(trainingSet,'RF');

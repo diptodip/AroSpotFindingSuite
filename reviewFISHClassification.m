@@ -398,10 +398,10 @@ function displayImFull(hObject,handles,drawSpotResults)
     
     %This is from when I had it display the raw data matrix in blue with pink
     %marking the maximum
-    % rc=imregionalmax(currentSlice);
-    % data.spotZoomRaw=imshow(cat(3,.75*imscale(currentSlice,99.995)+imscale(currentSlice,99.995).*rc,imscale(currentSlice,99.995),imscale(currentSlice,99.995)));
-    %%%%
-    %data.spotZoomLaplaceFiltered=imshow(imscale(data.laplaceWorm{data.iCurrentWorm}(:,:,currentZ),99.995));
+    rc=imregionalmax(currentSlice);
+    data.spotZoomRaw=imshow(cat(3,.75*imscale(currentSlice,99.995)+imscale(currentSlice,99.995).*rc,imscale(currentSlice,99.995),imscale(currentSlice,99.995)));
+    %%%
+    data.spotZoomLaplaceFiltered=imshow(imscale(data.laplaceWorm{data.iCurrentWorm}(:,:,currentZ),99.995));
     zoomFactorX=origWidth/data.spotSize(2);
     zoomFactorY=origHeight/data.spotSize(1);
     zoomFactor=max(zoomFactorX,zoomFactorY);
@@ -438,11 +438,11 @@ function displayImFull(hObject,handles,drawSpotResults)
     ylim(get(data.figure_handle,'CurrentAxes'),[currentSpotY-data.offset(1) currentSpotY+data.offset(1)+1]);
     
     %%%%%%%%%%%%
-    surfWidth=15;
-    surfNR=max(1,rows(end)-surfWidth+1);
-    surfWC=max(1,cols(end)-surfWidth+1);
-    surfEC=surfWC+surfWidth-1;
-    surfSR=surfNR+surfWidth-1;
+    surfWidth=7;
+    surfNR=max(1,yToRow(currentSpotY)-surfWidth);
+    surfWC=max(1,xToCol(currentSpotX)-surfWidth);
+    surfEC=min(origWidth,xToCol(currentSpotX)+surfWidth);
+    surfSR=min(origHeight,yToRow(currentSpotY)+surfWidth);
     %fprintf('%d %d %d %d\n',surfWC,surfNR,surfEC,surfSR);
     surfColumn=data.segStacks{data.iCurrentWorm}(surfNR:surfSR,surfWC:surfEC,:);
     %freezeColors;
@@ -856,7 +856,7 @@ function redoMachLearn_button_Callback(hObject, eventdata, handles)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
     
-    handles.trainingSet=trainRFClassifier(handles.trainingSet,'runVarFeatureSel',0);  %use old variables and nFeatures
+    handles.trainingSet=trainRFClassifier(handles.trainingSet,'runVarFeatureSel',false);  %use old variables and nFeatures
     handles.spotStats=classifySpots(handles.worms,handles.trainingSet);
     handles.iCurrentWorm=1;
     
