@@ -33,7 +33,7 @@ nestedOrFlatDirectoryStructure = 'nested';  % 'flat' is the other option
 
 % What are the dyes that are being used?  This should be a cell array. These will
 % be the directory names where the images are and also the names of directories under spotStats, segStacks, wormGaussianFit, etc.
-dyesUsed={'a594','cy','tmr'};
+dyesUsed={'a594','cy5','tmr'};
 isdapi='dapi'; %or '' if no dapi
 
 if strcmp(nestedOrFlatDirectoryStructure,'nested')
@@ -55,33 +55,45 @@ if strcmp(nestedOrFlatDirectoryStructure,'nested')
     if ~exist(PlotDir,'dir')
         mkdir(PlotDir);
     end;
-
+    
     WormGaussianFitDir=[AnalysisDir filesep 'WormGaussianFit'];
     if ~exist(WormGaussianFitDir,'dir')
         mkdir(WormGaussianFitDir);
-        for i=1:length(dyesUsed)
-            mkdir([WormGaussianFitDir filesep dyesUsed{i}]);
+    end;
+    for i=1:length(dyesUsed)
+        d=[WormGaussianFitDir filesep dyesUsed{i}];
+        if ~exist(d,'dir')
+            mkdir(d);
         end;
     end;
-
+    
     SpotStatsDir=[AnalysisDir filesep 'SpotStats'];
     if ~exist(SpotStatsDir,'dir')
         mkdir(SpotStatsDir);
-        for i=1:length(dyesUsed)
-            mkdir([SpotStatsDir filesep dyesUsed{i}]);
+    end;
+    
+    for i=1:length(dyesUsed)
+        d=[SpotStatsDir filesep dyesUsed{i}];
+        if ~exist(d,'dir')
+            mkdir(d);
+            
         end;
     end;
-
+    
     SegStacksDir=[AnalysisDir filesep 'SegStacks'];
     if ~exist(SegStacksDir,'dir')
         mkdir(SegStacksDir);
-        for i=1:length(dyesUsed)
-            mkdir([SegStacksDir filesep dyesUsed{i}]);
-        end;
-        if ~isempty(isdapi)
-            mkdir([SegStacksDir filesep isdapi]);
+    end;
+    for i=1:length(dyesUsed)
+        d=[SegStacksDir filesep dyesUsed{i}];
+        if ~exist(d,'dir')
+            mkdir(d);
         end;
     end;
+    if ~isempty(isdapi)
+        mkdir([SegStacksDir filesep isdapi]);
+    end;
+
 
     TrainingSetDir=[AnalysisDir filesep 'TrainingSets'];
     if ~exist(TrainingSetDir,'dir')
