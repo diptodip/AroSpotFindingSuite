@@ -109,11 +109,15 @@ if isfield(trainingSet,'RF') && runVarFeatureSel
 end
 
 % Check if new stats are added.
-if isempty(strfind(trainingSet.version, 'ver. 2.5'))
+updateTrainingSet=false;
+if ~isfield(trainingSet,'version')
+    updateTrainingSet=true;
+elseif isempty(strfind(trainingSet.version, 'ver. 2.5'))
+    updateTrainingSet=true;
+end;
+if updateTrainingSet
     display('Detect an older version. Update the trainingSet with new stats.')
     trainingSet=addStatsToTrainingSet(trainingSet);
-    suffix=strrep(trainingSet.FileName,'trainingSet_','');
-    suffix=strrep(suffix,'.mat','');
 end
 
 disp(['Suffix is: ' suffix]);
