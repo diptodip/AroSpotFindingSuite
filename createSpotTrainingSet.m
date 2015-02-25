@@ -60,6 +60,12 @@ else
     appendTrainingSet=0;
 end
 
+%if appending then take some parameters from pre-existing file
+if appendTrainingSet
+    ts=load(trainingSetName);
+    statsToUse=ts.trainingSet.statsUsed;
+    clear ts
+end;
 
 
 %Identify Spots
@@ -192,10 +198,12 @@ elseif appendTrainingSet==1
     trainingSetToAppend=trainingSet;
     load(trainingSetName)
     % Check if new stats are added.
-    if ~strcmp('ver. 2.5, new stats added',trainingSet.version)
-        display('Detect an older version. Update the trainingSet with new stats.')
-        trainingSet=addStatsToTrainingSet(trainingSet,1);
-    end
+    if isfield(trainingSet,'version')
+        if ~strcmp('ver. 2.5, new stats added',trainingSet.version)
+            display('Detect an older version. Update the trainingSet with new stats.')
+            trainingSet=addStatsToTrainingSet(trainingSet,1);
+        end
+    end;
     trainingSet.appended=1;
     % Find spots that were not in the training set.
     a=trainingSetToAppend.spotInfo(:,1:3);
