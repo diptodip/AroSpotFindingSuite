@@ -122,8 +122,12 @@ rejNum=size(rejectedSpotsData,1);
 spotNum=goldNum+rejNum;
 
 % spotInfo is: [posNumber, wormNumber, spotIndex, classification]  #Note that spotIndex is worms{x}.spotDataVectors.spotInfoNumberInWorm
-trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)]; %good
-trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)]; %append bad
+if goldNum>0
+    trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)]; %good
+end;
+if rejNum>0
+    trainingSet.spotInfo=[trainingSet.spotInfo; ones(rejNum,1)*posNumber rejectedSpotsData(:,end-1:end) zeros(rejNum,1)]; %append bad
+end;
 trainingSet.stats=struct;
 % Add stats info to training set
 fieldsToAdd=fields(worms{1}.spotDataVectors);
