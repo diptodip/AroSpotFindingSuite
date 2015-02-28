@@ -783,24 +783,29 @@ else
 end;
 
 %get the zoom128 size
-data.currentZoom128_width=get(data.zoom128_slider,'Value');
-data.currentZoom128_height=get(data.zoom128_slider,'Value');
-set(handles.zoom128_slider_txt,'String',['Zoom128 Size: ' num2str(get(handles.zoom128_slider,'Value'))]);
+data.currentZoom128_width=round(get(data.zoom128_slider,'Value'));
+data.currentZoom128_height=round(get(data.zoom128_slider,'Value'));
+set(handles.zoom128_slider_txt,'String',['Zoom128 Size: ' num2str(round(get(handles.zoom128_slider,'Value')))]);
 
 
 c16X=data.currentZoom16_x;
 c16Y=data.currentZoom16_y;
 c16W=data.currentZoom16_width;
 c16H=data.currentZoom16_height;
-c128X=data.currentZoom128_x;
-c128Y=data.currentZoom128_y;
+centerXY=[c16X+floor(c16H/2) c16Y+floor(c16W/2)];
+
 c128W=data.currentZoom128_width;
 c128H=data.currentZoom128_height;
+c128X=min(max(1,centerXY(1)-floor(c128W/2)),size(currentSlice,2)-(c128W-1));
+c128Y=min(max(1,centerXY(2)-floor(c128H/2)),size(currentSlice,1)-(c128H-1));
+% c128X=data.currentZoom128_x;
+% c128Y=data.currentZoom128_y;
 
 c16R=yToRow(c16Y);
 c16C=xToCol(c16X);
 c128R=yToRow(c128Y);
 c128C=xToCol(c128X);
+
 
 %i need an argument to tell it whether to recalculate regional maxima or
 %not...yes when i move, no when i toggle maxima
@@ -823,8 +828,8 @@ title('Max. Merged Image')
 %it doesn't work the same way with an axes created by "plot" as an axes
 %created by "imshow"...for imshow, the NW corner is (.5, .5) for plot, SW
 %corner is (0,0)
-rectangle('Position',[c128X, c128Y, c128W,c128H],'EdgeColor','g');
-rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor','y');
+rectangle('Position',[c128X, c128Y, c128W,c128H],'EdgeColor',[.8 .4 .8]);
+rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor',[0 .85 0]);
 %end;
 
 set(data.figure_handle,'CurrentAxes',data.zoom16);
@@ -861,16 +866,16 @@ color128=cat(3,currentSlice+.2*data.dataStructure.outlines,currentSlice+.2*data.
 data.zoom128=imshow(color128);
 origXLim=get(gca,'XLim'); origWidth=origXLim(2)-origXLim(1);
 origYLim=get(gca,'YLim'); origHeight=origYLim(2)-origYLim(1);
-zoomFactorX=origWidth/data.currentZoom128_width;
-zoomFactorY=origHeight/data.currentZoom128_height;
+zoomFactorX=origWidth/c128W;
+zoomFactorY=origHeight/c128H;
 zoomFactor=min(zoomFactorX,zoomFactorY);
 data.zoom128Factor=zoomFactor;
 zoom(data.zoom128Factor);
-xlim([data.currentZoom128_x data.currentZoom128_x+data.currentZoom128_width]);
-ylim([data.currentZoom128_y data.currentZoom128_y+data.currentZoom128_height]);
+xlim([c128X c128X+c128W]);
+ylim([c128Y c128Y+c128H]);
 rectColor=min(1,3*median(currentSlice(:)));
 if get(data.greenBox_checkBox,'Value')
-    rectangle('Position',[data.currentZoom16_x, data.currentZoom16_y, data.currentZoom16_width,data.currentZoom16_height],'EdgeColor',[rectColor/3 .8 rectColor/2],'LineWidth',.5);
+    rectangle('Position',[c16X, c16Y, c16W,c16H],'EdgeColor',[rectColor/3 .8 rectColor/2],'LineWidth',.5);
 end;
 set(data.rejectedNSpots_txt,'String',[num2str(size(handles.dataStructure.rejectedSpots,1)),' rejected spots']);%handles
 set(data.acceptedNSpots_txt,'String',[num2str(size(handles.dataStructure.goodSpots,1)),' accepted spots']);%handles

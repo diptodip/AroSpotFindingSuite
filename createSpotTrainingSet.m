@@ -120,7 +120,10 @@ clear segStacks
 goldNum=size(goldSpotsData,1);
 rejNum=size(rejectedSpotsData,1);
 spotNum=goldNum+rejNum;
-
+if ~exist('trainingSet','var')
+trainingSet=struct;
+trainingSet.spotInfo=[];
+end;
 % spotInfo is: [posNumber, wormNumber, spotIndex, classification]  #Note that spotIndex is worms{x}.spotDataVectors.spotInfoNumberInWorm
 if goldNum>0
     trainingSet.spotInfo=[ones(goldNum,1)*posNumber goldSpotsData(:,end-1:end) ones(goldNum,1)]; %good
