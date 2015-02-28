@@ -785,7 +785,7 @@ end;
 %get the zoom128 size
 data.currentZoom128_width=round(get(data.zoom128_slider,'Value'));
 data.currentZoom128_height=round(get(data.zoom128_slider,'Value'));
-set(handles.zoom128_slider_txt,'String',['Zoom128 Size: ' num2str(round(get(handles.zoom128_slider,'Value')))]);
+set(handles.zoom128_slider_txt,'String',['Zoom size (pixels): ' num2str(round(get(handles.zoom128_slider,'Value')))]);
 
 
 c16X=data.currentZoom16_x;
