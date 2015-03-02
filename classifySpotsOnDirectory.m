@@ -18,6 +18,10 @@ function classifySpotsOnDirectory(varargin)
     %       - 2013.03.27 small bug fixes.
     %% ========================================================================
     
+    %need to predeclare relevant variables
+    WormGaussianFitDir='';
+    intervalWidth=0.95;
+    dyesUsed={};
     run('Aro_parameters.m');
     
     
@@ -67,7 +71,7 @@ function classifySpotsOnDirectory(varargin)
         end
     else
         trainingSet=[];
-        dyeToDo={'alexa','a594','tmr','cy5','cy'};
+        dyeToDo=dyesUsed;%{'alexa','a594','tmr','cy5','cy'};
     end
     
     switch nestedOrFlatDirectoryStructure
@@ -96,7 +100,7 @@ function classifySpotsOnDirectory(varargin)
             for iD=1:length(dyeToDo)                
                 if exist([WormGaussianFitDir filesep dyeToDo{iD}],'dir')
                     stacks=dir(fullfile(WormGaussianFitDir,dyeToDo{iD},'*_wormGaussianFit.mat'));
-                    for i=1:length(stacks)
+                    parfor i=1:length(stacks)
                         stackName=stacks(i).name;
                         [dye, ~, ~, ~,spotStatsFileName]=parseStackNames(regexprep(stackName,'_wormGaussianFit.mat',''));
                         w=load(fullfile(WormGaussianFitDir,dyeToDo{iD},stacks(i).name));

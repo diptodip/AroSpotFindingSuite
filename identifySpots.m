@@ -546,7 +546,7 @@ if data.blueSlice(pixelToChange_r,pixelToChange_c)
             data.lastHandles.dataStructure=rmfield(data.lastHandles.dataStructure,'scaledSlice');
         end;
         if data.currentZ<data.dataStructure.origSize(3)
-            disp(['Moving from slice ' num2str(data.currentZ) ' to slice ' num2str(data.currentZ+1)]);
+            %disp(['Moving from slice ' num2str(data.currentZ) ' to slice ' num2str(data.currentZ+1)]);
             data.currentZ=data.currentZ+1;
             if ~data.highMemory
                 [currentSlice,spotVSortedScaled]=loadAndScaleSlice(data.dataStructure.scaledStack,data.currentZ,data);
@@ -675,14 +675,14 @@ newR=yToRow(pt(1,2));
 % If this is too close to the edge it will throw an error when trying to
 % figure out where the zoom16 image should be.  Protect it from that
 %newR and newC should be the upper left corner
-disp('newR, newC');
-disp([newR, newC]);
-disp(data.dataStructure.origSize([2 1]));
-disp(newR-floor(c16H/2));
+% disp('newR, newC');
+% disp([newR, newC]);
+% disp(data.dataStructure.origSize([2 1]));
+% disp(newR-floor(c16H/2));
 newC=max(1,min(newC,data.dataStructure.origSize(2)-c16W+1));
 newR=max(1,min(newR,data.dataStructure.origSize(1)-c16H+1));
-disp([newR, newC]);
-disp(pt(1,:));
+% disp([newR, newC]);
+% disp(pt(1,:));
 
 %%%%%%%%%%%%%%%%%%%%%%
 
@@ -1178,7 +1178,7 @@ else
     handles.lastHandles.dataStructure=rmfield(handles.lastHandles.dataStructure,'scaledSlice');
 end;
 if handles.currentZ<handles.dataStructure.origSize(3)
-    disp(['Moving from slice ' num2str(handles.currentZ) ' to slice ' num2str(handles.currentZ+1)]);
+    %disp(['Moving from slice ' num2str(handles.currentZ) ' to slice ' num2str(handles.currentZ+1)]);
     handles.currentZ=handles.currentZ+1;
     if ~handles.highMemory
         [currentSlice,spotVSortedScaled]=loadAndScaleSlice(handles.dataStructure.scaledStack,handles.currentZ,handles);

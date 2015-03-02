@@ -110,11 +110,21 @@ end
 
 % Check if new stats are added.
 updateTrainingSet=false;
-if ~isfield(trainingSet,'version')
-    updateTrainingSet=true;
-elseif isempty(strfind(trainingSet.version, 'ver. 2.5'))
+statsToAddIn2_5Version={'absDeltaPlusSign','deltaPlusSign','absPlusSignDelta','plusSignPvalue',...
+    'absDeltaStarSign','deltaStarSign','absStarSignDelta','starSignPvalue',...
+    'absDeltaCenterBox','deltaCenterBox','absCenterBoxDelta','centerBoxPvalue',...
+    'ratioSigmaXY','totalAreaRandPvalue','cumSumPrctile90RP','cumSumPrctile70RP','cumSumPrctile50RP','cumSumPrctile30RP',...
+    'cumSumPrctile90','cumSumPrctile70','cumSumPrctile50','cumSumPrctile30'};
+
+if length(intersect(statsToAddIn2_5Version,trainingSet.statsUsed))~=length(statsToAddIn2_5Version)
     updateTrainingSet=true;
 end;
+% 
+% if ~isfield(trainingSet,'version')
+%     updateTrainingSet=true;
+% elseif isempty(strfind(trainingSet.version, 'ver. 2.5'))
+%     updateTrainingSet=true;
+% end;
 if updateTrainingSet
     display('Detect an older version. Update the trainingSet with new stats.')
     trainingSet=addStatsToTrainingSet(trainingSet);
