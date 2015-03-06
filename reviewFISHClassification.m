@@ -315,7 +315,7 @@ function displayImFull(hObject,handles,drawSpotResults)
     
     ylim(data.spotResults,[rowToY((spotPage-1)*spotBoxesTotalWidth+1) rowToY(spotPage*spotBoxesTotalWidth)]);
     
-    if drawSpotResults
+    if drawSpotResults %this doesn't appear to ever be true as of 5Mar15
         
         for si=1:size(data.allLocs,1)
             if data.allLocs(si,5)==1 %good spots
@@ -325,7 +325,7 @@ function displayImFull(hObject,handles,drawSpotResults)
             end
             
             
-        end
+
         rectangle('Position',[data.outLines(si,:) data.spotSize],'EdgeColor',edgeColor);
         
         %for si=1:size(data.goodOutlines,1)
@@ -341,7 +341,7 @@ function displayImFull(hObject,handles,drawSpotResults)
         elseif data.Curated(:,3)==0 % Curated to bad spot
             rectangle('Position',[data.Curated(si,1:2) data.spotSize],'EdgeColor',[1,.5,0]);
         end
-        
+        end        
     end
     %currentSpot
     set(data.currentSpotRectangle,'Position',[data.spotBoxLocations(data.iCurrentSpot_allLocs,1)+1,data.spotBoxLocations(data.iCurrentSpot_allLocs,2)+1 data.spotSize-2],'EdgeColor',[1 0 0]);
@@ -378,8 +378,14 @@ function displayImFull(hObject,handles,drawSpotResults)
     currentSpotY=data.spotBoxPositions(data.iCurrentSpot_allLocs,2)+data.offset(1);
     origXLim=get(gca,'XLim'); origWidth=origXLim(2)-origXLim(1);
     origYLim=get(gca,'YLim'); origHeight=origYLim(2)-origYLim(1);
-    if get(data.arrowSpot_button,'Value')%data.rectangleAroundSpotOnEmbryo
-        line('Xdata',[currentSpotX+4, currentSpotX+3, currentSpotX+4, currentSpotX+3,currentSpotX+6],'Ydata',[currentSpotY-1+.5, currentSpotY+.5,currentSpotY+1+.5,currentSpotY+.5,currentSpotY+.5],'color',[.8 .4 0]);
+    if get(data.arrowSpot_button,'Value')%data.arrowToSpotOnEmbryo
+            if data.allLocs(data.iCurrentSpot_allLocs,5)==1 %good spots
+                arrowColor=[0,1,1];
+            else %bad spots
+                arrowColor=[1,1,0];
+            end
+  
+        line('Xdata',[currentSpotX+4, currentSpotX+3, currentSpotX+4, currentSpotX+3,currentSpotX+6],'Ydata',[currentSpotY-1+.5, currentSpotY+.5,currentSpotY+1+.5,currentSpotY+.5,currentSpotY+.5],'color',arrowColor);
         %rectangle('Position',[currentSpotX-7 currentSpotY-7 15 15],'EdgeColor',[.8 .4 0],'LineStyle','--');
         %Note that the rectangle was intrusive - it focused attention on the
         %putative spot and brought out its spotness even if it was no different from
