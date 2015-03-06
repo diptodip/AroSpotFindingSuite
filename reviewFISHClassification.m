@@ -507,7 +507,7 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
             save(handles.spotStatsFileName,'spotStats');
         case 'nested'
             save(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName),'worms');
-            save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'sptoStats');
+            save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'spotStats');
     end;                    disp(spotStats{1});
                     disp(spotStatsFileName);
                     delete(handles.figure1)
