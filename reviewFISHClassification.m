@@ -484,8 +484,7 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
     varargout{1} = handles.output;
     
     %rerun the randomForest with the trainingSet as it currently stands after
-    %review
-    
+    %review    disp(handles);
     disp('Spot fixing done.  Saving changes');
     button = questdlg('Do you want to re-train the classifier now?','Re-train?','No');
     switch button
@@ -509,7 +508,7 @@ function varargout = reviewFISHClassification_OutputFcn(hObject, eventdata, hand
             save(fullfile(handles.WormGaussianFitDir,handles.dye,handles.wormsFileName),'worms');
             save(fullfile(handles.SpotStatsDir,handles.dye,handles.spotStatsFileName),'spotStats');
     end;                    disp(spotStats{1});
-                    disp(spotStatsFileName);
+                    disp(handles.spotStatsFileName);
                     delete(handles.figure1)
             end
             
