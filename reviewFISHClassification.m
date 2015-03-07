@@ -26,14 +26,14 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
     %               * Click on the grey background of the gui.
     %                       > If you are going to use keystrokes, it is necessary to focus the computer's attention on the gui.
     %                       > Clicking on the grey background changes the focus to the gui and makes the program interpret keystrokes as the gui tells it to.
-    %               * Click the 'Done fixing this worm' button.
-    %                       > Done fixing this worm.
-    %                       > Saves all the changes and move on to the next worm.
+    %               * Click the 'Done w/ specimen' button.
+    %                       > Done fixing this specimen.
+    %                       > Saves all the changes and move on to the next specimen.
     %               * Page up/down keys.  $
     %                       > The left image pane is 25x25 but often more potential spots are evaluated.  Page up and down move you up or down to the next page of potential spots.
     %               * Left/right/up/down arrow.
     %                       > Used to move around the left image pane.
-    %               * Bad worm toggle button. $
+    %               * Bad specimen toggle button. $
     %                       > If you don't like the looks of the specimen, flag it as bad and move on.
     %               * Click 'Good Spot' button
     %                       > If you're on a good spot:  this spot will be added to the training set. (With a light blue X)
@@ -57,7 +57,7 @@ function varargout = reviewFISHClassification(varargin)  %nameMod
     %                       > Changes the right image to just the slice that includes the spot (On) or a max merge of the stack (Off)
     %               * 'Redo classifySpots' button
     %                       > This retrains the random forest classifier with the new training set.
-    %                       > Redo classifySpots on this worm and output the new results to the GUI.
+    %                       > Redo classifySpots on this specimen and output the new results to the GUI.
     %               * Checkbox in the lower right. $
     %                       > If checked, this means that the user has gone through and corrected this file and is satisfied with it.
     
@@ -257,7 +257,6 @@ function reviewFISHClassification_OpeningFcn(hObject, eventdata, handles, vararg
             end;
         end;
     end;
-    disp('wormimages constructed');
     
     handles.spotSize=[7 7];
     handles.offset=floor((handles.spotSize-1)/2);
@@ -293,11 +292,11 @@ function displayImFull(hObject,handles,drawSpotResults)
     set(data.nRejectedToGood_txt,'String',[num2str(data.nRejectedToGood) ' rejected -> good']);
     set(data.nGoodSpots_txt,'String',[num2str(sum(data.allLocs(:,5))) ' good spots']);
     set(data.nRejectedSpots_txt,'String',[num2str(sum(data.allLocs(:,5)~=1)) ' rejected spots']);
-    set(data.iCurrentWorm_txt,'String',['Worm: ' num2str(data.iCurrentWorm) ' of ' num2str(length(data.worms))]);
+    set(data.iCurrentWorm_txt,'String',['Specimen: ' num2str(data.iCurrentWorm) ' of ' num2str(length(data.worms))]);
     set(data.RandomForestResult_txt,'String',['Probability Estimate: ' num2str(data.allLocs(data.iCurrentSpot_allLocs,7)*100) '%']);
     set(data.scdValue_txt,'String',['scd: ' num2str(data.worms{data.iCurrentWorm}.spotDataVectors.scd(data.iCurrentSpot_worms))]);
     
-    set(data.iCurrentSpot_worms_txt,'String',['Index in worms: ' num2str(data.iCurrentSpot_worms)]);
+    set(data.iCurrentSpot_worms_txt,'String',['Index of spot: ' num2str(data.iCurrentSpot_worms)]);
     set(data.badWorm_button,'Value',abs(data.worms{data.iCurrentWorm}.goodWorm-1));%changes good 1,0 to bad 1,0
     currentZ=data.allLocs(data.iCurrentSpot_allLocs,3);
     set(data.currentSlice_txt,'String',['Slice ' num2str(currentZ) ' of ' num2str(size(data.segStacks{data.iCurrentWorm},3))]);
@@ -694,19 +693,19 @@ function rejectedSpot_button_Callback(hObject, eventdata, handles)
     displayImFull(hObject,handles,0);
     
     %--adds final spot information
-function worm = recordFinalClassification(worm)
+function specimen = recordFinalClassification(specimen)
     %records the final spot count and adds field 'final' to the classification
-    worm.nSpotsFinal=0;
-    for si=1:size(worm.spotInfo,2)
+    specimen.nSpotsFinal=0;
+    for si=1:size(specimen.spotInfo,2)
         %remember that some of the spots were not classified but were thrown
         %out
-        if isfield(worm.spotInfo{si},'classification')
-            if isfield(worm.spotInfo{si}.classification,'manual')
-                worm.spotInfo{si}.classification.final=worm.spotInfo{si}.classification.manual;
+        if isfield(specimen.spotInfo{si},'classification')
+            if isfield(specimen.spotInfo{si}.classification,'manual')
+                specimen.spotInfo{si}.classification.final=specimen.spotInfo{si}.classification.manual;
             else
-                worm.spotInfo{si}.classification.final=worm.spotInfo{si}.classification.MachLearn{1};
+                specimen.spotInfo{si}.classification.final=specimen.spotInfo{si}.classification.MachLearn{1};
             end;
-            worm.nSpotsFinal=worm.nSpotsFinal+worm.spotInfo{si}.classification.final;
+            specimen.nSpotsFinal=specimen.nSpotsFinal+specimen.spotInfo{si}.classification.final;
         end;
     end;
     
@@ -728,9 +727,9 @@ function done_button_Callback(hObject, eventdata, handles)
     set(data.arrowSpot_button,'Value',1)
     guidata(hObject,data);
     if data.iCurrentWorm<length(data.worms)
-        data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
-        while ~data.worms{data.iCurrentWorm}.goodWorm%if the worm is bad
-            data.iCurrentWorm=data.iCurrentWorm+1;%go to the next worm
+        data.iCurrentWorm=data.iCurrentWorm+1;%go to the next specimen
+        while ~data.worms{data.iCurrentWorm}.goodWorm%if the specimen is bad
+            data.iCurrentWorm=data.iCurrentWorm+1;%go to the next specimen
         end
         if ~isfield(data.worms{data.iCurrentWorm},'spotsFixed')
             data.worms{data.iCurrentWorm}.spotsFixed=0;
@@ -1193,7 +1192,7 @@ function handles=drawTheLeftPlane(handles)
     %handles.outlines=.3*bwperim(ones(handles.spotSize));
     %handles.curated=.3*ones(handles.spotSize);
     goodIntensities=[];
-    disp(['Doing spot box locations for worm #' num2str(handles.iCurrentWorm)]);
+    disp(['Doing spot box locations for specimen #' num2str(handles.iCurrentWorm)]);
     for si=1:nSpots
         currentR=1+handles.spotSize(1)*floor((si-1)/handles.horizSideSize);
         currentC=1+handles.spotSize(1)*mod((si-1),handles.horizSideSize);
