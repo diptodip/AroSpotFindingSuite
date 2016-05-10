@@ -59,7 +59,9 @@ function spotStatsDataAligning2(fileSuffix)
     disp('Aligning fluorescence data...')
     wormData=struct('spotInfo',[],'dye',dyesUsed);
     for d=1:length(dyesUsed)
-        wormData.(dyesUsed{d})=[];
+        currDye = dyesUsed{d};
+        disp(currDye);
+        wormData(1).(dyesUsed{d})=[];
     end;
     % Check if there are embryos denoted as bad embryos.
     % position and embryo number
@@ -72,30 +74,32 @@ function spotStatsDataAligning2(fileSuffix)
     iObjectInDataset=0;
     
     
-    for k=1:length(wormData.dye)
-        posFiles=dir(fullfile(SpotStatsDir,wormData.dye{k},[wormData.dye{k} '**_spotStats.mat']));
+    for k=1:length(dyesUsed)
+        posFiles=dir(fullfile(SpotStatsDir,dyesUsed{k},[dyesUsed{k} '**_spotStats.mat']));
         for j=1:length(posFiles)
-            load(posCount(j).name)
-            stackName=regexprep(posCount(j).name,'_','\.');
+            load(fullfile(SpotStatsDir,dyesUsed{k},posFiles(j).name))
+            stackName=regexprep(posFiles(j).name,'_','\.');
             stackPrefix=regexp(stackName,'\.','split');
             posNum=stackPrefix{2};
             posNum=str2num(cell2mat(regexp(posNum,'\d+','match')));
             fprintf('Aligning data at position %d ...\n', posNum)
             
             for i=1:length(spotStats)
-                if isempty(intersect([posNum i],badEmbryos,'rows'))
+                %if isempty(intersect([posNum i],badEmbryos,'rows'))
+                %temporarily assuming bad embryos shouldn't exist
+                if true
                     if k==1
                         iObjectInDataset=iObjectInDataset+1;
-                        wormData.spotInfo=[wormData.spotInfo; [iObjectInDataset posNum  i]];
+                        wormData(1).spotInfo=[wormData(1).spotInfo; [iObjectInDataset posNum  i]];
                     end;
                     
                     
                     
-                    r=intersect([posNum i],wormData.spotInfo(:,2:3),'rows');
+                    r=intersect([posNum i],wormData(1).spotInfo(:,2:3),'rows');
                     if isempty(r) %in case there are any that the first dye doesn't have
                         iObjectInDataset=iObjectInDataset+1;
-                        wormData.spotInfo=[wormData.spotInfo; [iObjectInDataset posNum  i]];
-                        r=intersect([posNum i],wormData.spotInfo(:,2:3),'rows');
+                        wormData(1).spotInfo=[wormData(1).spotInfo; [iObjectInDataset posNum  i]];
+                        r=intersect([posNum i],wormData(1).spotInfo(:,2:3),'rows');
                     end;
                     objectIndex=r(1);
                     if isfield(spotStats{i},'noSpot')
@@ -103,31 +107,36 @@ function spotStatsDataAligning2(fileSuffix)
                     else
                         dataToAdd=[objectIndex spotStats{i}.SpotNumEstimate abs(spotStats{i}.SpotNumRange(2)-spotStats{i}.SpotNumEstimate) abs(spotStats{i}.SpotNumRange(1)-spotStats{i}.SpotNumEstimate)];
                     end
-                    wormData.(wormData.dye{k})=[ wormData.(wormData.dye{k}); dataToAdd];
+                    wormData(1).(dyesUsed{k})=[wormData(1).(dyesUsed{k}); dataToAdd];
                     
+                else
+                    fprintf('DANG');
                 end
             end
         end
     end;
 
-    
-    wormData.meanRange=cellfun(@(x) mean(sum(wormData.(x)(:,3:4),2)),wormData.dye);
-    wormData.errorPercentage=  cellfun(@(x) (sum(wormData.(x)(:,3:4),2)/2)./(wormData.(x)(:,2)),wormData.dye);
+    wormData(1).meanRange=cellfun(@(x) mean(sum(wormData(1).(x)(:,3:4),2)), dyesUsed);
+    %wormData(1).errorPercentage=cellfun(@(x) (sum(wormData(1).(x)(:,3:4),2)/2)./(wormData(1).(x)(:,2)), dyesUsed, 'UniformOutput', false);
+    wormData(1).errorPercentage=[];
+    for k=1:length(dyesUsed)
+        wormData(1).errorPercentage=[wormData(1).errorPercentage, (100.*sum(wormData(1).(dyesUsed{k})(:,3:4),2)/2)./(wormData(1).(dyesUsed{k})(:,2))];
+    end
     clf
     h=figure(1);
-    for k=1:length(wormData.dye)
-        scatter(wormData.(wormData.dye{k})(:,2),wormData.errorPercentage(:,k),'.')
+    for k=1:length(dyesUsed)
+        scatter(wormData(1).(dyesUsed{k})(:,2),wormData(1).errorPercentage(:,k),'.')
         hold on
     end
     xlim([0 1500])
     ylim([0 2])
     xlabel('Spot Number')
     ylabel('ErrorRange/SpotNumEstimate')
-    legend(wormData.dye{:})
+    legend(dyesUsed{:})
     saveas(h,fullfile(PlotDir,['ErrorPercentagePlot_' fileSuffix]))
     hold off
     
-    %wormData.header={'worm_Index', 'position_Number','worm_Number', dye{1:end}, 'nuclei'}
+    wormData(1).header={'worm_Index', 'position_Number','worm_Number', dyesUsed{1:end}, 'nuclei'};
     save(fullfile(AnalysisDir,['wormData_' fileSuffix '.mat']),'wormData')
     
     
