@@ -302,7 +302,7 @@ function displayImFull(hObject,handles,drawSpotResults)
     set(data.currentSlice_txt,'String',['Slice ' num2str(currentZ) ' of ' num2str(size(data.segStacks{data.iCurrentWorm},3))]);
     currentSlice=data.segStacks{data.iCurrentWorm}(:,:,currentZ);
     
-    zoom(data.spotResultsImage,'factor',data.vertSideSize/(1+data.horizSideSize));
+    %zoom(data.spotResultsImage,'factor',data.vertSideSize/(1+data.horizSideSize));
     
     spotBoxesTotalWidth=data.horizSideSize*data.spotSize(1);
     
