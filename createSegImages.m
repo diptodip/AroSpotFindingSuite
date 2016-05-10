@@ -147,9 +147,9 @@ function createSegImages(stackFileType,varargin)
                 elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
                     switch nestedOrFlatDirectoryStructure
                         case 'flat'
-                            imageFileName=[dye{di} '_' stackSuffix '.tif'];
+                            imageFileName=[dye{di} stackSuffix '.tif'];
                         case 'nested'
-                            imageFileName=fullfile(ImageDir,dye{di},[dye{di} '_' stackSuffix '.tif']);
+                            imageFileName=fullfile(ImageDir,dye{di},[dye{di} stackSuffix '.tif']);
                     end;
                     
                     if exist(imageFileName,'file') %tif
