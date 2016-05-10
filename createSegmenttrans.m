@@ -41,9 +41,9 @@ function createSegmenttrans(positionIdentifier)
 
 %% Find all mask files associated with the positionIdentifier in the directory
    run('Aro_parameters.m');
-maskFiles=dir(fullfile(SegmentationMaskDir,['Mask_' positionIdentifier '_*.tif']));
+maskFiles=dir(fullfile(SegmentationMaskDir,['Mask_' positionIdentifier '*.tif']));
 if isempty(maskFiles)
-    fprintf('Failed to find any mask flies associated with position identifier %s .\nCheck your naming scheme. Examples are: "Mask_Pos1.tif" and "Mask_Pos1_1.tif".', positionIdentifier);
+    fprintf('Failed to find any mask files associated with position identifier %s .\nCheck your naming scheme. Examples are: "Mask_Pos1.tif" and "Mask_Pos1_1.tif".\n', positionIdentifier);
 else
     n=length(maskFiles);
     currpolys=cell(1,n);
