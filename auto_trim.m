@@ -14,6 +14,8 @@ decrementer = ones(rows, cols);
 info = imfinfo(filename);
 
 num_frames = length(info);
+num_frames -= 1
+num_frames /= 2
 
 bg_brightness = mean(mean(I));
 
