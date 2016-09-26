@@ -101,6 +101,7 @@ function createSegImages(stackFileType,varargin)
                 st=load(fullfile(SegmentationMaskDir,['segmenttrans' stackSuffix '.mat']));
                 currpolys=st.currpolys;
             elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
+                disp(stacks(i).name);
                 stackName=regexprep(stacks(i).name,'_','\.');
                 nameSplit=regexp(stackName,'\.','split');
                 nameSplit=nameSplit(~cellfun('isempty',nameSplit));
@@ -114,7 +115,6 @@ function createSegImages(stackFileType,varargin)
                 case 'nested'
                     segStackFileName=fullfile(SegStacksDir,dye{di},[dye{di} '_' stackSuffix '_SegStacks.mat']);
             end;
-            disp(stackSuffix);
             
             if ~exist(segStackFileName,'file') %e.g. cy5_Pos0_segStacks.mat % don't overWrite
                 fprintf('Creating %s segStacks of %s ....\n',dye{di},stackSuffix);
@@ -139,10 +139,10 @@ function createSegImages(stackFileType,varargin)
                         stack=double(stack);
                         stackExists=true;
                         catch ME
-                            fprintf('Failed to open file %s .', imageFileName);
+                            fprintf('Failed to open file %s.', imageFileName);
                         end;
                     else
-                        fprintf('Failed to find the file %s .', imageFileName)
+                        fprintf('Failed to find the file %s.', imageFileName)
                     end
                 elseif strcmp(stackFileType,'tif') || strcmp(stackFileType,'tiff')
                     switch nestedOrFlatDirectoryStructure

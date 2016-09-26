@@ -1,13 +1,11 @@
-function [] = auto_mask(filename, output)
+function [possiblyBad] = auto_mask(filename, output)
 
-if (~(exist('trim', 'dir') == 7))
-    disp('[ERROR] You need to have trimmed image stacks in a folder called "trim" first!');
-    return;
-end
+% if ~exist('trim', 'dir')
+%     disp('[ERROR] You need to have trimmed image stacks in a folder called "trim" first!');
+%     return;
+% end
 
-if (~(exist('mask', 'dir') == 7))
-    mkdir('mask');
-end
+possiblyBad = 0;
 
 info = imfinfo(filename);
 
@@ -129,9 +127,19 @@ se = strel('disk', 10, 4);
 
 mask_image = imdilate(mask_image, se);
 
-imshow(mask_image, []), title('2 means clustered');
+num_white = sum(mask_image(1, :)) + sum(mask_image(rows, :)) + sum(mask_image(:, 1)) + sum(mask_image(:, cols));
 
-imwrite(mask_image(:, :), strcat('mask/',output), 'WriteMode', 'append',  'Compression','none');
+%imshow(mask_image, []), title('2 means clustered');
 
+
+
+imwrite(mask_image(:, :), output, 'WriteMode', 'append',  'Compression','none');
+
+if num_white > 0
+    clear;
+    possiblyBad = 1;
+    return;
+end
 clear;
+possiblyBad = 0;
 return;

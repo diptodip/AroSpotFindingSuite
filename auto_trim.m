@@ -50,7 +50,7 @@ if ~dim
         end
     end
 else
-    for i = 1:num_Frames
+    for i = 1:num_frames
         I = imread(filename, i);
         I = imgaussfilt(I, 5);
         seg_I = imquantize(I, 1.07 * bg_brightness);
@@ -80,7 +80,6 @@ for j = 1:(num_frames - 5)
             end
         end
     end
-    disp(finish);
 end
 
 if start < 1
@@ -91,6 +90,10 @@ if finish > num_frames
     finish = num_frames;
 end
 
+if finish == 0
+    finish = num_frames;
+end
+
 disp(start);
 disp(finish);
 
@@ -98,5 +101,4 @@ for k = start:finish
     I = imread(filename, k);
     imwrite(I(:, :), output, 'WriteMode', 'append',  'Compression','none');
 end
-clear;
 return;
