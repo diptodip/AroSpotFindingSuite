@@ -16,6 +16,12 @@ bg_brightness = mean(mean(I));
 rows = size(I, 1);
 cols = size(I, 2);
 
+sensitive = false;
+
+if rows >= 1000 || cols >= 1000
+    sensitive = true;
+end
+
 num_frames = length(info);
 
 max_merge = zeros(size(I, 1), size(I, 2));
@@ -27,8 +33,8 @@ for i = 1:num_frames
     total = sum(sum(I));
     totals(i, 1) = total;
     I = imgaussfilt(I, 2);
-    for y = 1:rows
-        for x = 1:cols
+    for y = 1:cols
+        for x = 1:rows
             if I(x, y) > max_merge(x, y)
                 max_merge(x, y) = I(x, y);
             end
@@ -52,7 +58,11 @@ seg_I = ones(rows, cols);
 I = max_merge;
 
 if ~dim
-    level = 1.08 * bg_brightness;
+    threshold = 1.08;
+    if sensitive
+        threshold = 1.3;
+    end
+    level = threshold * bg_brightness;
     seg_I = imquantize(I, level);
 
 else
@@ -102,7 +112,7 @@ for x = 1:rows
 end
 
 for x = 1:rows
-    if pixel_labels(x, 512) == 1
+    if pixel_labels(x, cols) == 1
         num_white = num_white + 1;
     else
         num_black = num_black + 1;

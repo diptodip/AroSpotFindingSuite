@@ -20,17 +20,14 @@ parfor i = 1:numel(tif_files)
     RawImageDir = ParRawImageDir;
     ImageDir = ParImageDir;
     dyesUsed = PardyesUsed;
-    dye = '';
-    for d = 1:length(dyesUsed)
-        k = strfind(name, dyesUsed{d});
-        if ~isempty(k)
-            dye = dyesUsed{d};
-            d = length(dyesUsed);
-        end
-    end
+    dye = dyesUsed{1};
+    number_extension = strsplit(name, '-');
+    number = strsplit(number_extension{2}, '.');
+    number = number{1};
+    output_name = [dye number '.tif'];
     disp(strcat(RawImageDir, filesep, name));
     disp(strcat(ImageDir, filesep, dye, filesep, name));
-    auto_trim(strcat(RawImageDir, filesep, name), strcat(ImageDir, filesep, dye, filesep, name));
+    auto_trim(strcat(RawImageDir, filesep, name), strcat(ImageDir, filesep, dye, filesep, output_name));
 end
 clear;
 return;
