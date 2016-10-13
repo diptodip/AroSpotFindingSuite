@@ -80,6 +80,4 @@ for i = start:ending
 end
 
 disp(current_count);
-
-clear;
 return;

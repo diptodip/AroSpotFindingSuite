@@ -19,7 +19,7 @@ ParSegmentationMaskDir = [SegmentationMaskDir];
 ParRawImageDir = [RawImageDir];
 ParChromosomeFile = [ChromosomeFile];
 
-parfor i = 1:numel(tif_files)
+for i = 1:numel(tif_files)
     name = tif_files{i};
     SegmentationMaskDir = ParSegmentationMaskDir;
     RawImageDir = ParRawImageDir;
