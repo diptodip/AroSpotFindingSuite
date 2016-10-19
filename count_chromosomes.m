@@ -76,7 +76,7 @@ for i = start:ending
     end
     seg_I(~mask) = 0;
     seg_I = imgaussfilt(seg_I, 5);
-    seg_I = reshape(seg_I, rows * cols);
+    seg_I = reshape(seg_I, rows * cols, 1);
     [cluster_idx, cluster_center] = kmeans(seg_I, 2, 'distance', 'sqEuclidean', 'Replicates', 3);
     pixel_labels = reshape(cluster_idx, rows, cols);
     pixel_labels = pixel_labels - decrementer;
