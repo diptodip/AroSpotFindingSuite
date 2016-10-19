@@ -43,18 +43,18 @@ end
 decrementer = ones(rows, cols);
 seg_I = ones(rows, cols);
 
-threshold = 2.5;
+threshold = 1.5;
 level = threshold * bg_brightness;
 
 if ~dim
-    threshold = 2.5;
+    threshold = 1.5;
     if sensitive
-        threshold = 3.0;
+        threshold = 2.0;
     end
     level = threshold * bg_brightness;
 
 else
-    threshold = 1.7;
+    threshold = 1.2;
     level = threshold * bg_brightness;
 end
 
@@ -76,10 +76,12 @@ for i = start:ending
     end
     seg_I(~mask) = 0;
     seg_I = imgaussfilt(seg_I, 5);
+    seg_I = reshape(seg_I, rows * cols);
     [cluster_idx, cluster_center] = kmeans(seg_I, 2, 'distance', 'sqEuclidean', 'Replicates', 3);
     pixel_labels = reshape(cluster_idx, rows, cols);
     pixel_labels = pixel_labels - decrementer;
-    current = length(bwboundaries(seg_I));
+    imshow('visualization', pixel_labels);
+    current = length(bwboundaries(pixel_labels));
     if current > previous_count
         current_count = current_count + (current - previous_count);
     end
