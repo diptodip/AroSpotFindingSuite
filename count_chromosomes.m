@@ -80,7 +80,7 @@ for i = start:ending
     [cluster_idx, cluster_center] = kmeans(seg_I, 2, 'distance', 'sqEuclidean', 'Replicates', 3);
     pixel_labels = reshape(cluster_idx, rows, cols);
     pixel_labels = pixel_labels - decrementer;
-    imshow('visualization', pixel_labels);
+    imshow(pixel_labels);
     current = length(bwboundaries(pixel_labels));
     if current > previous_count
         current_count = current_count + (current - previous_count);
