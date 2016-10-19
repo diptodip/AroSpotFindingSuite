@@ -26,7 +26,6 @@ for i = 1:numel(tif_files)
     ChromosomeFile = ParChromosomeFile;
     dye_name_length = 3;
     mask_name = strcat('Mask_', name(dye_name_length+1:length(name)-4), '_1.tif');
-    mask_full_name [SegmentationMaskDir filesep mask_name];
     count = count_chromosomes([RawImageDir filesep name], [SegmentationMaskDir filesep mask_name]);
     fileID = fopen(ChromosomeFile, 'a');
     fprintf(fileID, [name(dye_name_length+1:length(name)-4) ', ' num2str(count) '\n']);

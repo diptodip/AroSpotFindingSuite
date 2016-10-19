@@ -3,7 +3,7 @@ function [current_count] = count_chromosomes(filename, maskname)
 info = imfinfo(filename);
 
 I = imread(filename, 1);
-mask = ones(size(I, 1), size(I, 2))
+mask = ones(size(I, 1), size(I, 2));
 if maskname ~= '0'
     mask = imread(maskname);
 end
@@ -23,8 +23,8 @@ num_frames = length(info);
 
 totals = [num_frames, 1];
 
-start = ((num_frames - 1)/2) + 1;
-ending = num_frames - 1;
+start = ((num_frames - 1)/2) + 2;
+ending = num_frames;
 
 for i = start:ending
     I = imread(filename, i);
@@ -49,11 +49,12 @@ level = threshold * bg_brightness;
 if ~dim
     threshold = 1.5;
     if sensitive
-        threshold = 2.0;
+        threshold = 1.7;
     end
     level = threshold * bg_brightness;
 
 else
+    disp('dim');
     threshold = 1.2;
     level = threshold * bg_brightness;
 end
@@ -61,26 +62,27 @@ end
 previous_count = 0;
 current_count = 0;
 
-display = seg_I;
-
-for i = start:ending
+for i = start:2:ending
     I = imread(filename, i);
     I = imgaussfilt(I, 3);
     seg_I = imquantize(I, level);
     seg_I = seg_I - decrementer;
-    if sum(sum(seg_I)) > 0.5 * rows * cols
+    if sum(sum(seg_I)) > (0.5 * rows * cols)
         seg_I = ~seg_I;
     end
-    if i == (start + ending) / 2
-        display = seg_I;
+    if sum(sum(seg_I)) > (0.5 * rows * cols)
+        seg_I = ~seg_I;
     end
     seg_I(~mask) = 0;
-    seg_I = imgaussfilt(seg_I, 5);
+    seg_I = imgaussfilt(seg_I, 7);
     seg_I = reshape(seg_I, rows * cols, 1);
-    [cluster_idx, cluster_center] = kmeans(seg_I, 2, 'distance', 'sqEuclidean', 'Replicates', 3);
+    [cluster_idx, ~] = kmeans(seg_I, 2, 'distance', 'sqEuclidean', 'Replicates', 3);
     pixel_labels = reshape(cluster_idx, rows, cols);
     pixel_labels = pixel_labels - decrementer;
-    imshow(pixel_labels);
+    if sum(sum(pixel_labels)) ~= 0
+        se = strel('disk', 6, 4);
+        pixel_labels = imdilate(pixel_labels, se);
+    end
     current = length(bwboundaries(pixel_labels));
     if current > previous_count
         current_count = current_count + (current - previous_count);
