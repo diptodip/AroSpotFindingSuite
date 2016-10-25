@@ -43,26 +43,26 @@ end
 decrementer = ones(rows, cols);
 seg_I = ones(rows, cols);
 
-threshold = 1.5;
+threshold = 2.5;
 level = threshold * bg_brightness;
 
 if ~dim
-    threshold = 1.5;
+    threshold = 2.5;
     if sensitive
-        threshold = 1.7;
+        threshold = 2.7;
     end
     level = threshold * bg_brightness;
 
 else
     disp('dim');
-    threshold = 1.2;
+    threshold = 1.7;
     level = threshold * bg_brightness;
 end
 
 previous_count = 0;
 current_count = 0;
 
-for i = start:2:ending
+for i = start:1:ending
     I = imread(filename, i);
     I = imgaussfilt(I, 3);
     seg_I = imquantize(I, level);
