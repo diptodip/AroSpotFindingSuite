@@ -38,8 +38,8 @@ dim = false;
 
 if (sigma(1)/bg_brightness) < 3.000e+03
     dim = true;
+    disp('this image is dim');
 end
-
 decrementer = ones(rows, cols);
 seg_I = ones(rows, cols);
 
@@ -47,7 +47,7 @@ threshold = 2.5;
 level = threshold * bg_brightness;
 
 if ~dim
-    threshold = 2.5;
+    threshold = 1.5;
     if sensitive
         threshold = 2.7;
     end
@@ -62,12 +62,15 @@ end
 previous_count = 0;
 current_count = 0;
 
+prev_labels = zeros(rows, cols);
+
 for i = start:1:ending
     I = imread(filename, i);
     I = imgaussfilt(I, 3);
     seg_I = imquantize(I, level);
     seg_I = seg_I - decrementer;
     if sum(sum(seg_I)) > (0.5 * rows * cols)
+        disp(seg_I);
         seg_I = ~seg_I;
     end
     if sum(sum(seg_I)) > (0.5 * rows * cols)
@@ -80,14 +83,25 @@ for i = start:1:ending
     pixel_labels = reshape(cluster_idx, rows, cols);
     pixel_labels = pixel_labels - decrementer;
     if sum(sum(pixel_labels)) ~= 0
-        se = strel('disk', 6, 4);
+        se = strel('disk', 9, 4);
         pixel_labels = imdilate(pixel_labels, se);
     end
+    
+    for j = 1:rows
+        for k = 1:cols
+            if prev_labels(j, k) > pixel_labels(j, k)
+                pixel_labels(j, k) = prev_labels(j, k);
+            end
+        end
+    end
+    
+    imshow(pixel_labels);
     current = length(bwboundaries(pixel_labels));
     if current > previous_count
         current_count = current_count + (current - previous_count);
     end
     previous_count = current;
+    prev_labels = pixel_labels;
 end
 
 disp(current_count);
