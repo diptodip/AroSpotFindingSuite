@@ -21,14 +21,17 @@ ParChromosomeFile = [ChromosomeFile];
 
 for i = 1:numel(tif_files)
     name = tif_files{i};
+    hyphenated = strsplit(name, '-');
+    numstr = strsplit(hyphenated{2},'.');
+    numstr = numstr{1};
     SegmentationMaskDir = ParSegmentationMaskDir;
     RawImageDir = ParRawImageDir;
     ChromosomeFile = ParChromosomeFile;
-    dye_name_length = 3;
-    mask_name = strcat('Mask_', name(dye_name_length+1:length(name)-4), '_1.tif');
-    count = count_chromosomes([RawImageDir filesep name], [SegmentationMaskDir filesep mask_name]);
+    %mask_name = strcat('Mask_', name(dye_name_length+1:length(name)-4), '_1.tif');
+    mask_name = '0';
+    count = count_chromosomes([RawImageDir filesep name], mask_name);
     fileID = fopen(ChromosomeFile, 'a');
-    fprintf(fileID, [name(dye_name_length+1:length(name)-4) ', ' num2str(count) '\n']);
+    fprintf(fileID, [hyphenated{1} ' ' numstr ', ' num2str(count) '\n']);
     fclose(fileID);
 end
 clear;

@@ -59,7 +59,7 @@ else
     level = threshold * bg_brightness;
 end
 
-previous_count = 0;
+previous_count = 1;
 current_count = 0;
 
 prev_labels = zeros(rows, cols);
@@ -87,6 +87,7 @@ for i = start:1:ending
         pixel_labels = imdilate(pixel_labels, se);
     end
     
+    current_labels = pixel_labels;
     for j = 1:rows
         for k = 1:cols
             if prev_labels(j, k) > pixel_labels(j, k)
@@ -95,13 +96,17 @@ for i = start:1:ending
         end
     end
     
-    imshow(pixel_labels);
     current = length(bwboundaries(pixel_labels));
     if current > previous_count
         current_count = current_count + (current - previous_count);
     end
     previous_count = current;
-    prev_labels = pixel_labels;
+    if mod(i, 10) == 0
+        prev_labels = current_labels;
+        previous_count = 10000;
+    else
+        prev_labels = pixel_labels;
+    end
 end
 
 disp(current_count);
