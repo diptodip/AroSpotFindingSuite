@@ -10,7 +10,10 @@ disp(tif_files);
 
 for i = 1:numel(tif_files)
     name = tif_files{i};
-    createSegmenttrans([SegmentationMaskDir filesep name]);
+    split_name = strsplit(name, '_');
+    positionIdentifier = split_name{2};
+    disp(positionIdentifier);
+    createSegmenttrans(positionIdentifier);
 end
 
 createSegImages('tif');
