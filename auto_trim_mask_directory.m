@@ -3,6 +3,7 @@ run('Aro_parameters.m');
 
 auto_trim_directory();
 auto_mask_directory();
+produce_mask_thumbnails();
 
 current_files = dir([SegmentationMaskDir filesep '*.tif']);
 tif_files = {current_files.name};

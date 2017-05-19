@@ -1,4 +1,4 @@
-function [possiblyBad] = auto_mask(filename, output)
+function [possiblyBad, thumb] = auto_mask(filename, output)
 
 % if ~exist('trim', 'dir')
 %     disp('[ERROR] You need to have trimmed image stacks in a folder called "trim" first!');
