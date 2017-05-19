@@ -428,7 +428,7 @@ In order to use Aro on PACE, follow the steps below. This assumes that a trainin
 \begin{enumerate}
 \item First, \texttt{SSH} into PACE using \texttt{user@biocluster-6.pace.gatech.edu}.
 \item In your \texttt{data} folder, place a copy of Aro using \texttt{scp -r AroSpotFindingSuite user@biocluster-6.pace.gatech.edu:~/data/} from your local machine (this assumes you have already obtained a copy of Aro from $<$\href{https://github.com/diptodip/AroSpotFindingSuite/archive/master.zip}{https://github.com/diptodip/AroSpotFindingSuite/archive/master.zip}$>$ and that you are currently in the folder containing the Aro folder).
-\item In your \texttt{data} folder, construct a new Aro project folder as detailed in Figure \ref{fig:folders}. To do this, use the \texttt{mkdir} command. Place all of the \texttt{*.pbs} script files in the Aro folder in this project folder using \texttt{cp}.
+\item In your \texttt{data} folder, construct a new Aro project folder as detailed in Figure \ref{fig:folders}. To do this, use the \texttt{mkdir} command. Place all of the \texttt{*.pbs} script files in the Aro folder in this project folder using \texttt{cp}. Also place the training set files you have produced in the training set folder.
 \item Copy over the \texttt{Aro\_parameters.m} example file from the Aro folder (and make sure that it is filled out properly for your analysis).
 \item Submit the Aro job to the cluster queue by using \texttt{qsub full\_run\_aro.pbs}.
     \subitem Alternatively, run the steps only up to masking and producing thumbnails using \texttt{qsub automask\_pace.pbs}.
