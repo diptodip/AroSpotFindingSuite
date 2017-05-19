@@ -1,0 +1,22 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {section}{\numberline {2}Preparation}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}A note about directories for Aro}{2}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Setting up Aro in MATLAB}{2}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Prepare your image files}{4}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Prepare masks for your images}{5}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.5}Set up a parameter file for your data set}{7}{subsection.2.5}
+\contentsline {subsection}{\numberline {2.6}Create segmentation masks for Aro}{9}{subsection.2.6}
+\contentsline {section}{\numberline {3}Classifying Spots With Aro}{9}{section.3}
+\contentsline {subsection}{\numberline {3.1}Find candidate spots for each cell}{9}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Use Aro to classify the spot candidates}{9}{subsection.3.2}
+\contentsline {subsubsection}{\numberline {3.2.1}Create a training set}{10}{subsubsection.3.2.1}
+\contentsline {subsubsection}{\numberline {3.2.2}Use the training set to train a classifier}{13}{subsubsection.3.2.2}
+\contentsline {subsubsection}{\numberline {3.2.3}Classify the spots using a training set}{13}{subsubsection.3.2.3}
+\contentsline {subsubsection}{\numberline {3.2.4}Review the classified spots and retrain}{14}{subsubsection.3.2.4}
+\contentsline {subsubsection}{\numberline {3.2.5}Classify all spots automatically}{17}{subsubsection.3.2.5}
+\contentsline {subsubsection}{\numberline {3.2.6}Sum all the spot counts}{17}{subsubsection.3.2.6}
+\contentsline {section}{\numberline {4}Reading Results From Aro}{17}{section.4}
+\contentsline {subsection}{\numberline {4.1}Statistics for each position}{17}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Using the summarized data file}{18}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Accessing and interpreting error plots}{20}{subsection.4.3}
+\contentsline {section}{\numberline {5}Automatically running Aro on PACE}{21}{section.5}

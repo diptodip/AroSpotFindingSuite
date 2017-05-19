@@ -1,0 +1,22 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Preparation}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{A note about directories for Aro}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Setting up Aro in MATLAB}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Prepare your image files}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.4}{Prepare masks for your images}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.5}{Set up a parameter file for your data set}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.6}{Create segmentation masks for Aro}{section.2}% 8
+\BOOKMARK [1][-]{section.3}{Classifying Spots With Aro}{}% 9
+\BOOKMARK [2][-]{subsection.3.1}{Find candidate spots for each cell}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.2}{Use Aro to classify the spot candidates}{section.3}% 11
+\BOOKMARK [3][-]{subsubsection.3.2.1}{Create a training set}{subsection.3.2}% 12
+\BOOKMARK [3][-]{subsubsection.3.2.2}{Use the training set to train a classifier}{subsection.3.2}% 13
+\BOOKMARK [3][-]{subsubsection.3.2.3}{Classify the spots using a training set}{subsection.3.2}% 14
+\BOOKMARK [3][-]{subsubsection.3.2.4}{Review the classified spots and retrain}{subsection.3.2}% 15
+\BOOKMARK [3][-]{subsubsection.3.2.5}{Classify all spots automatically}{subsection.3.2}% 16
+\BOOKMARK [3][-]{subsubsection.3.2.6}{Sum all the spot counts}{subsection.3.2}% 17
+\BOOKMARK [1][-]{section.4}{Reading Results From Aro}{}% 18
+\BOOKMARK [2][-]{subsection.4.1}{Statistics for each position}{section.4}% 19
+\BOOKMARK [2][-]{subsection.4.2}{Using the summarized data file}{section.4}% 20
+\BOOKMARK [2][-]{subsection.4.3}{Accessing and interpreting error plots}{section.4}% 21
+\BOOKMARK [1][-]{section.5}{Automatically running Aro on PACE}{}% 22
