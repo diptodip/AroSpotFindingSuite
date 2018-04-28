@@ -11,20 +11,23 @@ current_files = dir([SegmentationMaskDir filesep '*.tif']);
 tif_files = {current_files.name};
 tif_files = natsortfiles(tif_files);
 
-num_thumbs = round(numel(tif_files)/20);
+num_thumbs = floor(numel(tif_files)/20);
+if numel(tif_files)/20 > num_thumbs
+    num_thumbs = num_thumbs + 1;
+end
 if num_thumbs < 1
     num_thumbs = 1;
 end
 
 
 
-for i = 1:num_thumbs;
+for i = 1:num_thumbs
     image = zeros(400, 500, 1);
     for j = 0:3
         for k = 0:4
-            if ((k + 1) +  5 * (j)) <= numel(tif_files)
-                disp(['[producing thumbnail] ' tif_files{(k + 1) + 5*j}]);
-                original = imread([SegmentationMaskDir filesep tif_files{(k + 1) + 5*j}]);
+            if ((k + 1) +  5*j + 20*(i-1)) <= numel(tif_files)
+                disp(['[producing thumbnail] ' tif_files{(k + 1) + 5*j + 20*(i-1)}]);
+                original = imread([SegmentationMaskDir filesep tif_files{(k + 1) + 5*j + 20*(i-1)}]);
                 thumb = imresize(original, [100, 100]);
                 start_x = j * 100 + 1;
                 end_x = start_x + 99;

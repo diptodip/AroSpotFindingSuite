@@ -31,7 +31,10 @@ fclose(bad_mask_file);
 disp(handles.bad_files);
 
 
-num_thumbs = round(numel(tif_files)/20);
+num_thumbs = floor(numel(tif_files)/20);
+if numel(tif_files)/20 > num_thumbs
+    num_thumbs = num_thumbs + 1;
+end
 if num_thumbs < 1
     num_thumbs = 1;
 end
@@ -45,7 +48,7 @@ rectangles = {};
 
 for j = 0:3
     for k = 0:4
-        if ((k + 1) +  5 * (j)) <= numel(tif_files);
+        if ((k + 1) +  5 * (j)) <= numel(tif_files)
             start_x = j * 100 + 1;
             end_x = start_x + 99;
             start_y = k * 100 + 1;
@@ -75,6 +78,11 @@ guidata(hObject, handles);
 % when an image of a mask is clicked, its status of being
 % bad or good is toggled (i.e. flipped)
 function toggle_status(objectHandle, eventData, handles)
+run('Aro_parameters.m');
+current_files = dir([SegmentationMaskDir filesep '*.tif']);
+tif_files = {current_files.name};
+tif_files = natsortfiles(tif_files);
+
 handles = guidata(objectHandle);
 axesHandle  = get(objectHandle,'Parent');
 coordinates = get(axesHandle,'CurrentPoint'); 
@@ -84,13 +92,13 @@ y = round(coordinates(2), 0);
 k = (x - mod(x, 100)) / 100;
 j = (y - mod(y, 100)) / 100;
 
-if strcmp(handles.rectangles{(k + 1) + 5 * j}.Visible,'on')
-    handles.rectangles{(k + 1) + 5 * j}.Visible = 'off';
-    index = find(strcmp(handles.bad_files, handles.rectangle_files{(k + 1) + 5*j}));
+if ((k + 1) +  5*j + 20*(handles.index - 1)) <= numel(tif_files) && strcmp(handles.rectangles{(k+1) + 5*j + 20*(handles.index - 1)}.Visible,'on')
+    handles.rectangles{(k + 1) + 5*j + 20*(handles.index - 1)}.Visible = 'off';
+    index = find(strcmp(handles.bad_files, handles.rectangle_files{(k + 1) + 5*j + 20*(handles.index - 1)}));
     handles.bad_files(index) = [];
-else
-    handles.rectangles{(k + 1) + 5 * j}.Visible = 'on';
-    handles.bad_files{end+1} = handles.rectangle_files{(k + 1) + 5 * j};
+elseif ((k + 1) +  5*j + 20*(handles.index - 1)) <= numel(tif_files)
+    handles.rectangles{(k + 1) + 5*j + 20*(handles.index - 1)}.Visible = 'on';
+    handles.bad_files{end+1} = handles.rectangle_files{(k + 1) + 5*j + 20*(handles.index - 1)};
 end
 disp(handles.bad_files);
 guidata(objectHandle, handles);
@@ -100,17 +108,77 @@ function varargout = mask_preview_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 function pushbutton1_Callback(hObject, eventdata, handles)
+run('Aro_parameters.m');
 handles.output = hObject;
 handles.index = handles.index - 1;
 Cek(hObject, eventdata, handles);
-imshow(handles.X{handles.index},[]);
+handles.image_handle = imshow(handles.X{handles.index},[]);
+
+current_files = dir([SegmentationMaskDir filesep '*.tif']);
+tif_files = {current_files.name};
+tif_files = natsortfiles(tif_files);
+
+for j = 0:3
+    for k = 0:4
+        if ((k + 1) +  5*j + 20*(handles.index-1)) <= numel(tif_files);
+            start_x = j * 100 + 1;
+            end_x = start_x + 99;
+            start_y = k * 100 + 1;
+            end_y = start_y + 99;
+            name = tif_files{(k + 1) + 5*j + 20*(handles.index-1)};
+            handles.rectangle_files{end+1} = name;
+            show_rectangle = 'off';
+            if any(strcmp(handles.bad_files, name))
+                show_rectangle = 'on';
+            end
+            name = strsplit(name, '_');
+            name = name(2);
+            text(handles.axes1, start_y+35, start_x+50, name, 'Color', 'magenta', 'FontWeight', 'Bold');
+            current_rect = rectangle(handles.axes1, 'Position', [start_y + 4 start_x + 4 92 92], 'EdgeColor', 'r', 'LineWidth', 4, 'Visible', show_rectangle);
+            handles.rectangles{end+1} = current_rect;
+        end
+    end
+end
+
+set(handles.image_handle, 'ButtonDownFcn', {@toggle_status, handles});
+
 guidata(hObject, handles);
 
 function pushbutton2_Callback(hObject, eventdata, handles)
+run('Aro_parameters.m');
 handles.output = hObject;
 handles.index = handles.index + 1;
 Cek(hObject, eventdata, handles);
-imshow(handles.X{handles.index},[]);
+handles.image_handle = imshow(handles.X{handles.index},[]);
+
+current_files = dir([SegmentationMaskDir filesep '*.tif']);
+tif_files = {current_files.name};
+tif_files = natsortfiles(tif_files);
+
+for j = 0:3
+    for k = 0:4
+        if ((k + 1) +  5*j + 20*(handles.index-1)) <= numel(tif_files);
+            start_x = j * 100 + 1;
+            end_x = start_x + 99;
+            start_y = k * 100 + 1;
+            end_y = start_y + 99;
+            name = tif_files{(k + 1) + 5*j + 20*(handles.index-1)};
+            handles.rectangle_files{end+1} = name;
+            show_rectangle = 'off';
+            if any(strcmp(handles.bad_files, name))
+                show_rectangle = 'on';
+            end
+            name = strsplit(name, '_');
+            name = name(2);
+            text(handles.axes1, start_y+35, start_x+50, name, 'Color', 'magenta', 'FontWeight', 'Bold');
+            current_rect = rectangle(handles.axes1, 'Position', [start_y + 4 start_x + 4 92 92], 'EdgeColor', 'r', 'LineWidth', 4, 'Visible', show_rectangle);
+            handles.rectangles{end+1} = current_rect;
+        end
+    end
+end
+
+set(handles.image_handle, 'ButtonDownFcn', {@toggle_status, handles});
+
 guidata(hObject, handles);
 
 function Cek(hObject, eventdata, handles)

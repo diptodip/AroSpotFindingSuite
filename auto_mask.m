@@ -1,4 +1,4 @@
-function [possiblyBad, thumb] = auto_mask(filename, output)
+function [possiblyBad] = auto_mask(filename, output)
 
 % if ~exist('trim', 'dir')
 %     disp('[ERROR] You need to have trimmed image stacks in a folder called "trim" first!');
@@ -127,29 +127,37 @@ connected_components = bwconncomp(pixel_labels);
 
 component_sizes = cellfun(@numel,connected_components.PixelIdxList);
 
-[max_val, idx] = max(component_sizes);
+min_size = 10000;
 
-mask_image = zeros(rows, cols);
-
-mask_image(connected_components.PixelIdxList{idx}) = 1;
-
-se = strel('disk', 10, 4);
-
-mask_image = imdilate(mask_image, se);
-
-num_white = sum(mask_image(1, :)) + sum(mask_image(rows, :)) + sum(mask_image(:, 1)) + sum(mask_image(:, cols));
-
-%imshow(mask_image, []), title('2 means clustered');
-
-
-
-imwrite(mask_image(:, :), output, 'WriteMode', 'append',  'Compression','none');
-
-if num_white > 0
-    clear;
-    possiblyBad = 1;
-    return;
+if numel(component_sizes(component_sizes > min_size)) > 0
+    possiblyBad = zeros(1,numel(component_sizes(component_sizes > min_size)));
+else
+    possiblyBad = zeros(1);
 end
-clear;
-possiblyBad = 0;
+
+mask_counter = 0;
+
+for i=1:numel(component_sizes)
+    if component_sizes(i) > min_size
+        mask_counter = mask_counter + 1;
+        
+        mask_image = zeros(rows, cols);
+
+        mask_image(connected_components.PixelIdxList{i}) = 1;
+
+        se = strel('disk', 10, 4);
+
+        mask_image = imdilate(mask_image, se);
+
+        num_white = sum(mask_image(1, :)) + sum(mask_image(rows, :)) + sum(mask_image(:, 1)) + sum(mask_image(:, cols));
+
+        figure, imshow(mask_image);
+
+        imwrite(mask_image(:, :), [output '_' num2str(mask_counter) '.tif'], 'Compression','none');
+
+        if num_white > 0
+            possiblyBad(mask_counter) = 1;
+        end
+    end
+end
 return;
