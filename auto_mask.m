@@ -16,12 +16,6 @@ bg_brightness = mean(mean(I));
 rows = size(I, 1);
 cols = size(I, 2);
 
-sensitive = false;
-
-if rows >= 1000 || cols >= 1000
-    sensitive = true;
-end
-
 num_frames = length(info);
 
 max_merge = zeros(size(I, 1), size(I, 2));
@@ -48,6 +42,7 @@ dim = false;
 
 if (sigma(1)/bg_brightness) < 3.000e+03
     dim = true;
+    disp('[WARNING] dim image');
 end
 
 decrementer = ones(rows, cols);
@@ -58,15 +53,12 @@ seg_I = ones(rows, cols);
 I = max_merge;
 
 if ~dim
-    threshold = 1.08;
-    if sensitive
-        threshold = 1.3;
-    end
+    threshold = 1.25;
     level = threshold * bg_brightness;
     seg_I = imquantize(I, level);
 
 else
-    level = 1.05 * bg_brightness;
+    level = 1.1 * bg_brightness;
     seg_I = imquantize(I, level);
 end
 
@@ -125,6 +117,8 @@ end
 
 connected_components = bwconncomp(pixel_labels);
 
+disp(connected_components);
+
 component_sizes = cellfun(@numel,connected_components.PixelIdxList);
 
 min_size = 10000;
@@ -150,8 +144,6 @@ for i=1:numel(component_sizes)
         mask_image = imdilate(mask_image, se);
 
         num_white = sum(mask_image(1, :)) + sum(mask_image(rows, :)) + sum(mask_image(:, 1)) + sum(mask_image(:, cols));
-
-        figure, imshow(mask_image);
 
         imwrite(mask_image(:, :), [output '_' num2str(mask_counter) '.tif'], 'Compression','none');
 
